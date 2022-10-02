@@ -1,0 +1,46 @@
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SpaceCon", "SpaceCon\SpaceCon.vcxproj", "{41B664BE-A726-4050-8320-C7F6F3DC1A0A}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Setup", "Setup\Setup.vdproj", "{02571C07-B984-4588-901B-9D6EC1D705CB}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SPMonitor", "SPMonitor\SPMonitor.vcxproj", "{5D7CB809-F8BC-4702-8652-2A75A207087D}"
+EndProject
+Global
+	GlobalSection(SourceCodeControl) = preSolution
+		SccNumberOfProjects = 3
+		SccProjectName0 = \u0022$/SpaceCon\u0022,\u0020OHBAAAAA
+		SccLocalPath0 = ..
+		SccProvider0 = MSSCCI:Microsoft\u0020Visual\u0020SourceSafe
+		CanCheckoutShared = false
+		SccProjectFilePathRelativizedFromConnection0 = SpaceCon\\
+		SccProjectUniqueName1 = Setup\\Setup.vdproj
+		SccLocalPath1 = ..
+		CanCheckoutShared = false
+		SccProjectFilePathRelativizedFromConnection1 = SpaceCon\\Setup\\
+		SccProjectUniqueName2 = SpaceCon\\SpaceCon.vcxproj
+		SccProjectName2 = \u0022$/SpaceCon/SpaceCon\u0022,\u0020PHBAAAAA
+		SccLocalPath2 = SpaceCon
+		CanCheckoutShared = false
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{41B664BE-A726-4050-8320-C7F6F3DC1A0A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{41B664BE-A726-4050-8320-C7F6F3DC1A0A}.Debug|Win32.Build.0 = Debug|Win32
+		{41B664BE-A726-4050-8320-C7F6F3DC1A0A}.Release|Win32.ActiveCfg = Release|Win32
+		{41B664BE-A726-4050-8320-C7F6F3DC1A0A}.Release|Win32.Build.0 = Release|Win32
+		{02571C07-B984-4588-901B-9D6EC1D705CB}.Debug|Win32.ActiveCfg = Debug
+		{02571C07-B984-4588-901B-9D6EC1D705CB}.Release|Win32.ActiveCfg = Release
+		{02571C07-B984-4588-901B-9D6EC1D705CB}.Release|Win32.Build.0 = Release
+		{5D7CB809-F8BC-4702-8652-2A75A207087D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5D7CB809-F8BC-4702-8652-2A75A207087D}.Debug|Win32.Build.0 = Debug|Win32
+		{5D7CB809-F8BC-4702-8652-2A75A207087D}.Release|Win32.ActiveCfg = Release|Win32
+		{5D7CB809-F8BC-4702-8652-2A75A207087D}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

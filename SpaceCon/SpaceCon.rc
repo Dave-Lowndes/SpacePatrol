@@ -1,0 +1,326 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include "windows.h"
+#undef APSTUDIO_HIDDEN_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_SPACECON            ICON                    "SpaceCon.ico"
+
+IDI_SMALL               ICON                    "small.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDC_SPACECON MENU
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "Configure...",                ID_CONFIG
+        MENUITEM "E&xit",                       IDM_EXIT
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&About ...",                  IDM_ABOUT
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDC_SPACECON ACCELERATORS
+BEGIN
+    "?",            IDM_ABOUT,              ASCII,  ALT
+    "/",            IDM_ABOUT,              ASCII,  ALT
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDS_APP_TITLE           "JD Design Space Patrol"
+    IDS_RECOMEND_VERY_LOW   "Free some disk space. Very low!"
+    IDS_RECOMEND_BELOW_THRESHOLD "Reduce setting or free some disk space"
+    IDS_RECOMEND_NEAR_THRESHOLD "Near to alarm threshold."
+    IDS_FAILED_WRITE_REG    "Failed to write the values to the registry"
+    IDS_UNSAVED_PROMPT      "You've made changes, are you sure you want to exit"
+    IDC_SPACECON            "JDDESIGN_SPACECON"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_YOU_CANT_CHANGE_SETTINGS 
+                            "You don't have the required permissions to change the threshold settings.\n\nHowever, any settings previously saved by your administrator will be applied."
+    IDS_YOU_CANT_CHANGE_OS_SETTING 
+                            "You don't have the required permissions to change the operating system's low-disk space mechanism.\n\nHowever, any settings previously saved by your administrator will be applied."
+    IDS_DRIVE               "Drive"
+    IDS_CAPACITY            "Capacity"
+    IDS_FREE_SPACE          "Free Space"
+    IDS_ALARM_AT            "Alarm at"
+    IDS_RECOMMEND           "Recommendation"
+    IDS_RECOMMEND_FREE_SPACE 
+                            "Free some disk space. There may be insufficient space to defragment the drive properly."
+    IDS_CLOSE_FOR_REG       "If you've entered your registration details, close the SpaceCon dialog to have the changes take effect"
+END
+
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United Kingdom) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
+#pragma code_page(1252)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICON1               ICON                    "ICON1.ICO"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_CTXT_MENU MENU
+BEGIN
+    POPUP "Dummy"
+    BEGIN
+        MENUITEM "Run Disk Cleanup",            ID_INVOKEDISKCLEANUP
+        MENUITEM "Run Explorer",                ID_RUNEXPLORER
+        MENUITEM "Configure...",                ID_CONFIG
+        MENUITEM SEPARATOR
+        MENUITEM "About...",                    IDM_ABOUT
+        MENUITEM "Exit",                        ID_EXITSPACECONTROL
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_CONFIG_DLG DIALOGEX 0, 0, 560, 140
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_APPWINDOW
+CAPTION "JD Design Space Patrol"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Check the disk drives that you want Space Patrol to monitor",IDC_STATIC,7,10,482,8
+    CONTROL         "",IDC_LIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_ALIGNLEFT | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,7,23,485,97
+    CONTROL         "Disable the operating system's built-in low-disk space checking facility",IDC_DISABLE_OS,
+                    "Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,7,123,485,10
+    DEFPUSHBUTTON   "&Modify...",IDOK,503,23,50,14,WS_GROUP
+    PUSHBUTTON      "&Apply",IDC_SAVE,503,40,50,14
+    PUSHBUTTON      "Close",IDCANCEL,503,57,50,14
+    PUSHBUTTON      "&Help",IDC_CONFIG_HELP,503,88,50,14
+    PUSHBUTTON      "A&bout...",IDC_ABOUT,503,105,50,14
+END
+
+IDD_MOD_DLG DIALOGEX 0, 0, 177, 82
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTERMOUSE | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Modify Notification Threshold"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "&Alarm at:",IDC_STATIC,7,55,30,8
+    EDITTEXT        IDC_ALARMAT,54,53,47,14,ES_RIGHT | ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "MB",IDC_STATIC,103,55,12,8
+    DEFPUSHBUTTON   "OK",IDOK,120,7,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,120,24,50,14
+    PUSHBUTTON      "&Set to 15%",IDC_PRESET,120,53,50,14
+    LTEXT           "Drive:",IDC_STATIC,7,7,20,8
+    EDITTEXT        IDC_DRIVE,52,7,63,12,ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER
+    LTEXT           "Capacity:",IDC_STATIC,7,21,32,8
+    EDITTEXT        IDC_DRIVE_SIZE,52,21,63,12,ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER
+    LTEXT           "Free Space:",IDC_STATIC,7,35,40,8
+    EDITTEXT        IDC_DRIVE_FREE,52,35,63,12,ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER
+    CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,7,49,163,1,WS_EX_STATICEDGE
+    LTEXT           "(1 GB = 1024 MB)",IDC_STATIC,54,68,61,8
+END
+
+IDD_ABOUT DIALOGEX 40, 10, 220, 175
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "About"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    LTEXT           "&Name",IDC_STATIC,31,138,20,8
+    EDITTEXT        IDC_REG_NAME,82,135,132,14,ES_AUTOHSCROLL
+    LTEXT           "&Registration #",IDC_STATIC,31,156,45,8
+    EDITTEXT        IDC_REG_NUM,82,153,132,14,ES_AUTOHSCROLL
+    ICON            IDI_ICON1,IDC_STATIC,7,7,20,20
+    LTEXT           "File Description",IDC_FILE_DESC,31,8,128,8
+    LTEXT           "Version",IDC_STATIC,31,22,24,8
+    LTEXT           "1.2.3",IDC_VERSION,62,22,30,8
+    LTEXT           "Copyright",IDC_COPYRIGHT,31,36,128,8
+    DEFPUSHBUTTON   "OK",IDOK,164,6,50,14,WS_GROUP
+    LTEXT           "Email",IDC_EMAILUS,31,51,174,8,SS_NOTIFY | SS_CENTERIMAGE | WS_TABSTOP
+    LTEXT           "Check for Updates",IDC_CHECK_FOR_UPDATE,31,63,175,8,SS_NOTIFY | WS_TABSTOP
+    LTEXT           "Web Site",IDC_WEB_HOME,31,75,30,8,SS_NOTIFY | WS_TABSTOP
+    LTEXT           "Registered to:",IDC_REG_TO_TXT,31,91,47,8
+    LTEXT           "UNREGISTERED",IDC_REG_USER,83,91,126,8,SS_NOPREFIX
+    LTEXT           "When you have registered, please enter your name and registration number EXACTLY in the following fields and press OK",IDC_REG_MSG,31,105,182,25
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_CONFIG_DLG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 553
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 133
+    END
+
+    IDD_MOD_DLG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 170
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 75
+    END
+
+    IDD_ABOUT, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 167
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 2,4,0,0
+ PRODUCTVERSION 2,4,0,0
+ FILEFLAGSMASK 0x17L
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080904b0"
+        BEGIN
+            VALUE "CompanyName", "JD Design"
+            VALUE "FileDescription", "Space Patrol Configuration"
+            VALUE "FileVersion", "2.4.0.0"
+            VALUE "InternalName", "SpaceCon"
+            VALUE "LegalCopyright", "Copyright © JD Design 2002-2022"
+            VALUE "OriginalFilename", "SpaceCon.exe"
+            VALUE "ProductName", "Space Patrol"
+            VALUE "ProductVersion", "2.4.0.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x809, 1200
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// RT_RCDATA
+//
+
+IDR_VALS                RT_RCDATA               "colsizes.bin"
+
+#endif    // English (United Kingdom) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

@@ -1,0 +1,116 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{30ea6546-ed04-450a-9feb-9138f28cfa36}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{c4ba2ac1-2679-4c34-b7dd-a61ddf57de8e}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{fefa7cf4-2b3e-4608-856c-6251592595ab}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+    <Filter Include="Header Files\LibraryHeaders">
+      <UniqueIdentifier>{64b3449d-ad67-4a30-a8f0-dc9310a00035}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\LibraryCode">
+      <UniqueIdentifier>{9c957870-25bb-448c-9b18-2e5953848bae}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="SpaceCon.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\CommonAboutBoxV3Reg\AboutDlg.cpp">
+      <Filter>Source Files\LibraryCode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\CommonAboutBoxV3Reg\VerUtil.cpp">
+      <Filter>Source Files\LibraryCode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\CommonCode\CheckForUpdate.cpp">
+      <Filter>Source Files\LibraryCode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\RegGen\RegDecV3.cpp">
+      <Filter>Source Files\LibraryCode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\CommonAboutBoxV3Reg\time_t_funcs.cpp">
+      <Filter>Source Files\LibraryCode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\RegGen\RegKeyRegistryFuncs.cpp">
+      <Filter>Source Files\LibraryCode</Filter>
+    </ClCompile>
+    <ClCompile Include="CommonToBoth.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="colsizes.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Icon1.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="small.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="SpaceCon.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\ReadMe\ConfigDlg.png" />
+    <None Include="..\ReadMe\Notification on Win8.1.png" />
+    <None Include="ReadMe.txt" />
+    <None Include="..\ReadMe\revision_history.htm" />
+    <None Include="..\ReadMe\ThresholdDlg.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SpaceCon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CommonAboutBoxV3Reg\AboutDlg.h">
+      <Filter>Header Files\LibraryHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CommonAboutBoxV3Reg\AboutDlgResourceIds.h">
+      <Filter>Header Files\LibraryHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CommonAboutBoxV3Reg\VerUtil.h">
+      <Filter>Header Files\LibraryHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CommonCode\CheckForUpdate.h">
+      <Filter>Header Files\LibraryHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\RegGen\RegKeyRegistryFuncs.h">
+      <Filter>Header Files\LibraryHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\RegGen\RegDataV3.h">
+      <Filter>Header Files\LibraryHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="CommonToBoth.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SpaceCon.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="..\..\CommonAboutBoxV3Reg\AboutDlg.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="SpacePatrol.hpj">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

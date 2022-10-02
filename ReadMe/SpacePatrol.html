@@ -1,0 +1,136 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+<meta content="en-gb" http-equiv="Content-Language">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="description" content="JD Design Space Patrol Documentation">
+<meta name="keywords" content="Space Patrol,Windows,low disk space,monitor">
+<title>JD Design Space Patrol Documentation</title>
+<style type="text/css">
+@media screen
+{
+	body
+	{
+		margin: 2em auto;
+		width: 60em;
+	}
+}
+
+@media print
+{
+	body
+	{
+		/* no point in having an additional margin for printing */
+		margin:0px;
+	}
+}
+
+body {
+	font-family:Calibri,Candara,Segoe,"Segoe UI",Optima,verdana,geneva,Arial,helvetica,sans-serif;
+	font-size:medium;
+}
+li
+{
+	margin-bottom: 0.5em;
+}
+
+.indent-code {
+	font-family: "Courier New", Courier, monospace;
+	margin-left: 40px;
+}
+.indent {
+	margin-left: 40px;
+}
+.rhs-img {
+	margin-left: 20px;
+	margin-right: 20px;
+}
+</style>
+<base target="_blank">
+</head>
+
+<body>
+
+<h1>Space Patrol V2.4</h1>
+<p>Space Patrol monitors the available space on your local hard disk drives and provides a notification when the configurable threshold level is reached.</p>
+<p>Unlike the built-in provision in some of the Windows operating systems, Space Patrol gives you full control over the threshold level and, where possible, 
+provides a consistent notification user interface for all supported versions of Windows.</p>
+<h4>Space Patrol - Copyright © 2002-2022 JD Design, All Rights Reserved</h4>
+<h2>Installation</h2>
+<p>Expand the zip file to a directory on your machine and run the setup program.</p>
+<p>Follow the on-screen 
+instructions to complete the installation.</p>
+<p>During setup, you'll have the opportunity to configure the settings, and once you've completed that, the last step of Setup informs you that Space Patrol is 
+installed and briefly tells you how to use it. If you're upgrading an existing version, setup may need to restart Windows.</p>
+<h3>Administration Installation</h3>
+<p>The installer supports the MSI administrative installation options. For example:</p>
+<p class="indent-code">msiexec /jm spacecon.msi</p>
+<p>"Advertises" Space Patrol on all the machine's users Programs menu items.<br>When a user invokes the Start-&gt;Programs-&gt;JD Design-&gt;Space Patrol-&gt;Space Patrol 
+Documentation option, the installation will complete.</p>
+<p>or:</p>
+<p><span class="indent-code">msiexec /a spacecon.msi</span></p>
+<p>Performs an "administrative" installation to a shared network location.</p>
+<h2>How Do You Use Space Patrol?</h2>
+<p>Setup configures Space Patrol to start monitoring automatically when you log onto the computer. It does this by adding a 
+<a href="https://msdn.microsoft.com/en-us/library/aa376977(v=vs.85).aspx" target="_blank">
+registry setting to automatically start the monitor program when you log in.</a></p>
+<p>You can configure Space Patrol during Setup, or at any time, by using Start-&gt;Programs-&gt;JD Design-&gt;Space Patrol-&gt;Configure Space Patrol.</p>
+<p>Note that 
+the configuration program requires elevated permissions. If you have UAC enabled, you'll be prompted by Windows UAC when you start it.</p>
+<p>The Space Patrol configuration program displays your disk drive information and suggests where you may want to alter the setting.</p>
+<p class="indent"><img alt="Space Patrol Configuration dialog" src="ConfigDlg.png"></p>
+<p>Monitoring can be enabled per-disk drive, and for 
+those operating systems that have an inbuilt low disk space notification facility, Space Patrol lets you disable the operating system's facility.</p>
+<p>For Windows XP and later, this setting affects the HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer NoLowDiskSpaceChecks 
+registry setting.</p>
+<ol>
+	<li>To alter the threshold setting, select the drive and double click (or use the Modify button).</li>
+	<li>Alter the notification level using the "Modify Notification Threshold" dialog.
+		<p><img alt="Modify Threshold Dialog" src="ThresholdDlg.png"></p>
+	</li>
+	<li>If you want to disable the operating system facility, check the "Disable the operating system's built-in low-disk space checking facility" button.</li>
+	<li>When you've configured the settings to be how you want them, press the Apply button to commit the settings.</li>
+</ol>
+<p>If you've altered the settings so that the low space setting is effective, you should see a notification icon appear in the taskbar notification area and, 
+depending on your version of Windows, a popup notification indication. This notification will recur periodically, getting less frequent the longer 
+the low disk space situation persists - so as not to annoy you too much if you choose to ignore it.</p>
+<p><img alt="Notification Icon for Windows 8.1" class="rhs-img" height="128" src="Notification%20on%20Win8.1.png" style="float: right" width="360"></p>
+<p>Here's how the notification looks under Windows 8.1. The actual presentation 
+is different under different versions of Windows.</p>
+<p>An unregistered version contains the full functionality but won't automatically apply the saved settings when you log on - you have to run the "Configure 
+Space Patrol" menu item and press the Apply button.</p>
+<h3>Registering</h3>
+<p>Although Space Patrol is now free to use, if you'd like to contribute to its 
+maintenance, you can do so online using one of the secure payment 
+facilities on <a href="https://www.jddesign.co.uk/register.htm">our web site</a>. The core source code is available for
+<a href="https://github.com/Dave-Lowndes/SpacePatrol" target="_blank">viewing 
+on GitHub</a>.</p>
+<p>
+We'll email your registration information to you 
+as soon as possible. Copy and paste your key into the 
+About dialog box. You can access this dialog from the Space Control 
+configuration dialog's "About" button (see the screen shot above).</p>
+<p>You can check that registration has worked by re-displaying the About box from 
+the main dialog.</p>
+<h2>Updates</h2>
+<p>Any updates to the current version are free to registered users by downloading the latest version from our web site. Your current registration number will 
+continue to work with updates.</p>
+<h2>Problems/FAQ's?</h2>
+<p>For up-to-date information, check the FAQs on <a href="http://www.jddesign.co.uk/" target="_blank">our web site</a>.</p>
+<h2>Removal</h2>
+<p>Use the Control Panel, Add/Remove Programs (Programs and Features) applet and choose the Space Patrol item.</p>
+<h2><a href="revision_history.htm" target="_blank">Revision History</a></h2>
+<h2>Support</h2>
+<p>We maintain a list of frequently asked questions on our web site. If you have a technical question, please check there to see if you can find an answer 
+before contacting us.</p>
+<p>We will post the latest versions of our utilities on our web site as soon as they are available, so please take a look to keep up to date and to see what 
+other software and services we offer.</p>
+<p>Web Site: <a href="http://www.jddesign.co.uk/">http://www.jddesign.co.uk/</a></p>
+<p>If you have any suggestions for improvements to any of our utilities, please contact us via email (our up-to-date address is on our web site's contacts 
+page). It's always good to hear from people using our products, and we appreciate your taking the time to tell us.</p>
+<p>Thanks<br>JD Design</p>
+
+</body>
+
+</html>

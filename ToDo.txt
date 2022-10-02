@@ -1,0 +1,54 @@
+Add Vista shield icon to Configure context menu
+---
+Does NoLowDiskSpaceChecks setting work for Vista?
+---
+When the registraton information is entered from a non-monitor thread set a global signal to cause all monitor instances to close & restart so the reg changes take effect.
+---
+When monitoring, regarless of the next tip time, if the disk space is 
+somewhat lower than the last time, report it again after a much shorter 
+period.
+
+If the disk space is very low, can we add an overlay icon "!" and make it 
+red to indicate urgency?
+
+___
+
+Would it be possible to update this program and allow a configurable Sound with repeating option to be added when thresholds are met ?
+
+-Configurable WAV file Alarm for Warnings.
+-Repeating option for Warnings ie Repeat WAV every 0-60mins.
+-Abiltiy to choose which HDs to Warn on Low Space.
+-Ability to choose network Drives on LAN or WAN and how often to check. This allows one server to monitor its whole Network.
+-Smart space Warning - Have the program calculate how long till space will run out.
+
+
+Thanks very much David for your reply. It seems the software market is severely lacking in the HD space monitoring. I'm a heavy P2P user and often run out of HD space. I'd appreciate an audible warning including all the options i've stated above. My last thought was spur of the moment - it would be great to know at any time just how many minutes/hours I had till i run out of space again.
+In my searching i found the following s/w, whilst its great, i think it can be improved upon in many ways.
+http://www.freemeter.us
+Its major downfall is no monitoring of LAN/WAN HDs.
+
+___
+
+Yes in my own usage a Server uses Radmin to administer Clients on 
+the LAN/WAN , instead of flicking through several screens checking 
+your s/w is still running and hard drve space is still ample , it could 
+alert Administrators of pending low space on any Hard Drives.
+
+While i'm brainstorming, it would also be very informative if your software 
+could alert to any programs that have crashed , again with repeating 
+audible alerts.
+
+As an after thought i think it would be great if visible flashing alerts on 
+screen could also be an added choice for those not wanting sound or 
+deaf people.
+Heres another idea - I've seen s/w flash num-lock lights etc for alerts.
+
+___
+TRENDING.... ****
+There are many disk space monitoring tools that can send low free space warnings.
+Storage management is much more than just that! Only Disk Space Manager can show
+you why your disk space is low. 
+
+If we record the disk space accumulated by each folder on a disk drive over a period of time, we could trend the information and work out where it's growing.
+---
+
