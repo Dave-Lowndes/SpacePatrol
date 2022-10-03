@@ -61,18 +61,6 @@
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
-        "Entry"
-        {
-        "MsmKey" = "8:_C260AB68459CE0E03E57B30F98B64C4E"
-        "OwnerKey" = "8:_66B20F2ADBD94F40AE95C10320D171CD"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_C260AB68459CE0E03E57B30F98B64C4E"
-        "OwnerKey" = "8:_9951E7F1FF9D44198E4D9B19AA9E13A1"
-        "MsmSig" = "8:_UNDEFINED"
-        }
     }
     "Configurations"
     {
@@ -138,7 +126,7 @@
             "{4AA51A2D-7D85-4A59-BA75-B0809FC8B380}:_4C4C093CA8E3489582995993503F48EF"
             {
             "Name" = "8:Configure"
-            "Condition" = "8:"
+            "Condition" = "8:BLOCK_THIS_CONDITION_WHICH_IS_NEVER_TRUE=1"
             "Object" = "8:_66B20F2ADBD94F40AE95C10320D171CD"
             "FileType" = "3:2"
             "InstallAction" = "3:2"
@@ -166,7 +154,7 @@
             "{4AA51A2D-7D85-4A59-BA75-B0809FC8B380}:_EA5C6452F7344D4AB44E438FEA0AC5A2"
             {
             "Name" = "8:StartMonitor"
-            "Condition" = "8:"
+            "Condition" = "8:BLOCK_THIS_CONDITION_WHICH_IS_NEVER_TRUE=1"
             "Object" = "8:_9951E7F1FF9D44198E4D9B19AA9E13A1"
             "FileType" = "3:2"
             "InstallAction" = "3:2"
@@ -292,26 +280,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_C260AB68459CE0E03E57B30F98B64C4E"
-            {
-            "SourcePath" = "8:bcrypt.dll"
-            "TargetName" = "8:bcrypt.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_6C0160A8847244D8AECB6AB3D9820211"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
         }
         "FileType"
         {
@@ -381,7 +349,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Space Patrol"
         "ProductCode" = "8:{886A3753-BB6F-4499-8B81-BB20ADF136A3}"
-        "PackageCode" = "8:{622C0902-4C32-4EF4-9E65-2027F9FE89DD}"
+        "PackageCode" = "8:{C3F04420-6B88-48AC-8EDE-8455FB76F3C3}"
         "UpgradeCode" = "8:{49D9D25A-76CC-4E93-8A14-F15825F2D9F3}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
@@ -404,7 +372,7 @@
         "UseSystemSearchPath" = "11:TRUE"
         "TargetPlatform" = "3:0"
         "PreBuildEvent" = "8:"
-        "PostBuildEvent" = "8:\"%SignToolPath%\\x86\\signtool.exe\" sign /f \"..\\..\\..\\David's Code Signing Certificate.pfx\" /p %CertPassword% /d \"Space Patrol\" $(BuiltOuputPath)\r\n\"%SignToolPath%\\x86\\signtool.exe\" sign /f \"..\\..\\..\\David's Code Signing Certificate.pfx\" /p %CertPassword%  /d \"Space Patrol\" $(ProjectDir)$(Configuration)\\setup.exe"
+        "PostBuildEvent" = "8:rem cscript.exe \"$(ProjectDir)ModifyMsiToEnableLaunchApplication.js\" \"$(BuiltOuputPath)\"\r\n\"%SignToolPath%\\x86\\signtool.exe\" sign /f \"..\\..\\..\\David's Code Signing Certificate.pfx\" /p %CertPassword% /d \"Space Patrol\" $(BuiltOuputPath)\r\n\"%SignToolPath%\\x86\\signtool.exe\" sign /f \"..\\..\\..\\David's Code Signing Certificate.pfx\" /p %CertPassword%  /d \"Space Patrol\" $(ProjectDir)$(Configuration)\\setup.exe"
         "RunPostBuildEvent" = "3:0"
         }
         "Registry"
@@ -607,6 +575,20 @@
             "Folder" = "8:_55559CC49FDB4820B0E1A2F376562C1F"
             "WorkingFolder" = "8:_37E9B6CEEDA143ADBBB10BEE7B89B2BC"
             "Icon" = "8:"
+            "Feature" = "8:"
+            }
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_B22889DAA16349858C4F2B14EB00A0E8"
+            {
+            "Name" = "8:Space Patrol Monitor"
+            "Arguments" = "8:"
+            "Description" = "8:Start the Space Patrol Monitor program."
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:107"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_9951E7F1FF9D44198E4D9B19AA9E13A1"
+            "Folder" = "8:_55559CC49FDB4820B0E1A2F376562C1F"
+            "WorkingFolder" = "8:_6C0160A8847244D8AECB6AB3D9820211"
+            "Icon" = "8:_9951E7F1FF9D44198E4D9B19AA9E13A1"
             "Feature" = "8:"
             }
             "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_C6A550FCCB904A69BAD43EA3B1196D91"
@@ -1240,7 +1222,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_66B20F2ADBD94F40AE95C10320D171CD"
             {
-            "SourcePath" = "8:..\\Debug\\SPConfig.exe"
+            "SourcePath" = "8:..\\Release\\SPConfig.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_6C0160A8847244D8AECB6AB3D9820211"
@@ -1296,7 +1278,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_9951E7F1FF9D44198E4D9B19AA9E13A1"
             {
-            "SourcePath" = "8:..\\Debug\\SPMonitor.exe"
+            "SourcePath" = "8:..\\Release\\SPMonitor.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_6C0160A8847244D8AECB6AB3D9820211"

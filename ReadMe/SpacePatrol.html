@@ -61,8 +61,6 @@ provides a consistent notification user interface for all supported versions of 
 <p>Expand the zip file to a directory on your machine and run the setup program.</p>
 <p>Follow the on-screen 
 instructions to complete the installation.</p>
-<p>During setup, you'll have the opportunity to configure the settings, and once you've completed that, the last step of Setup informs you that Space Patrol is 
-installed and briefly tells you how to use it. If you're upgrading an existing version, setup may need to restart Windows.</p>
 <h3>Administration Installation</h3>
 <p>The installer supports the MSI administrative installation options. For example:</p>
 <p class="indent-code">msiexec /jm spacecon.msi</p>
@@ -72,10 +70,13 @@ Documentation option, the installation will complete.</p>
 <p><span class="indent-code">msiexec /a spacecon.msi</span></p>
 <p>Performs an "administrative" installation to a shared network location.</p>
 <h2>How Do You Use Space Patrol?</h2>
-<p>Setup configures Space Patrol to start monitoring automatically when you log onto the computer. It does this by adding a 
+<p>Once installed, run the Space Patrol monitor program from your Start menu. 
+You'll only need to do this once as it will start automatically when you next 
+log on. It does this by adding a 
 <a href="https://msdn.microsoft.com/en-us/library/aa376977(v=vs.85).aspx" target="_blank">
 registry setting to automatically start the monitor program when you log in.</a></p>
-<p>You can configure Space Patrol during Setup, or at any time, by using Start-&gt;Programs-&gt;JD Design-&gt;Space Patrol-&gt;Configure Space Patrol.</p>
+<p>To configure the threshold level for each of your disk drives, run the 
+"Configure Space Patrol" program from your Start menu.</p>
 <p>Note that 
 the configuration program requires elevated permissions. If you have UAC enabled, you'll be prompted by Windows UAC when you start it.</p>
 <p>The Space Patrol configuration program displays your disk drive information and suggests where you may want to alter the setting.</p>
@@ -98,8 +99,6 @@ the low disk space situation persists - so as not to annoy you too much if you c
 <p><img alt="Notification Icon for Windows 8.1" class="rhs-img" height="128" src="Notification%20on%20Win8.1.png" style="float: right" width="360"></p>
 <p>Here's how the notification looks under Windows 8.1. The actual presentation 
 is different under different versions of Windows.</p>
-<p>An unregistered version contains the full functionality but won't automatically apply the saved settings when you log on - you have to run the "Configure 
-Space Patrol" menu item and press the Apply button.</p>
 <h3>Registering</h3>
 <p>Although Space Patrol is now free to use, if you'd like to contribute to its 
 maintenance, you can do so online using one of the secure payment 
