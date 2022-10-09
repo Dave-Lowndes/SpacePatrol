@@ -47,45 +47,6 @@ static optional<CMyRegData> g_RegData;
 
 #define AMEGABYTE	(1024*1024)
 
-/* The OS version information */
-//static OSVERSIONINFO g_vi;
-#if 0
-/* The following are the Win98 registry settings to enable/disable its inbuilt low-disk space notifications */
-#define REGSTR_PATH_FILESYSTEM _T("System\\CurrentControlSet\\Control\\FileSystem")
-#define REGSTR_VAL_DRIVE_LDS_BDCAST_DISABLE _T("DisableLowDiskSpaceBroadcast")
-
-static DWORD GetWin98LDSFlags( void )
-{
-	DWORD dwFlags = 0;
-	LONG res;
-	CRegKey rk;
-
-	res = rk.Open( HKEY_LOCAL_MACHINE, REGSTR_PATH_FILESYSTEM, KEY_READ );
-
-	if ( res == ERROR_SUCCESS )
-	{
-		/* Read the value */
-		res = rk.QueryDWORDValue( REGSTR_VAL_DRIVE_LDS_BDCAST_DISABLE, dwFlags );
-	}
-
-	return dwFlags;
-}
-
-static void SetWin98LDSFlags( DWORD dwFlags )
-{
-	LONG res;
-	CRegKey rk;
-
-	res = rk.Open( HKEY_LOCAL_MACHINE, REGSTR_PATH_FILESYSTEM, KEY_SET_VALUE );
-
-	if ( res == ERROR_SUCCESS )
-	{
-		/* Read the value */
-		res = rk.SetDWORDValue( REGSTR_VAL_DRIVE_LDS_BDCAST_DISABLE, dwFlags );
-	}
-}
-#endif
-
 typedef struct tagColStruct
 {
 	int StringID;		// The resource string ID for the list caption
@@ -155,23 +116,6 @@ static void UpdateDriveInformation( HWND hList, int Item, WORD DriveNum, LPCTSTR
 		{
 			StringCchCopy( pItemData->szVolName, _countof( pItemData->szVolName ), sfi.szDisplayName );
 		}
-#if 0
-//Old version - not necessary, the above does it better - handles empty volume labels the same as Explorer does.
-		else
-		{
-			DWORD dwMaxLen, dwFSFlags;
-
-			GetVolumeInformation( pItemData->szDrive, pItemData->szVolName, DIM( pItemData->szVolName ) - sizeof(" (C:)"),
-					NULL, &dwMaxLen, &dwFSFlags, NULL/*szFSType*/, 0/*sizeof( szFSType )*/ );
-
-			PathMakePretty( pItemData->szVolName );
-
-			/* Append formatted drive letter to the volume name */
-			const int curlen = lstrlen(pItemData->szVolName);
-			StringCchPrintf( &pItemData->szVolName[curlen], DIM(pItemData->szVolName)-curlen,
-				_T(" (%c:)"), /*(BYTE) CharUpper( MAKEINTRESOURCE( */pItemData->szDrive[0] /*) ) */);
-		}
-#endif
 		lvi.mask = LVIF_TEXT | LVIF_PARAM;
 		lvi.iItem = Item;
 		lvi.iSubItem = 0;
@@ -288,48 +232,53 @@ static void UpdateDriveInformation( HWND hList, int Item, WORD DriveNum, LPCTSTR
 		if ( MsgID != 0 )
 		{
 			CString str;
-			str.LoadString( g_hInstance, MsgID );
-			lvi.pszText = const_cast<LPTSTR>(static_cast<LPCTSTR>(str));
+			if ( str.LoadString( g_hInstance, MsgID ) )
+			{
+				lvi.pszText = const_cast<LPTSTR>(static_cast<LPCTSTR>(str));
 
-			SendMessage( hList, LVM_SETITEMTEXT, Item, (LPARAM) &lvi );
-//			ListView_SetItemText( hList, Item, COL_RECOMENDATION, szMsg );
+				SendMessage( hList, LVM_SETITEMTEXT, Item, (LPARAM) &lvi );
+			}
+			else
+			{
+				// What's gone wrong to lose the string?
+				_ASSERT( false );
+			}
 		}
 		else
 		{
 			lvi.pszText = nullptr;
 			SendMessage( hList, LVM_SETITEMTEXT, Item, (LPARAM) &lvi );
-//			ListView_SetItemText( hList, Item, COL_RECOMENDATION, NULL );
 		}
 	}
 }
 
 LRESULT CALLBACK ModifyDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	static CModDlgParams * pP;
+	static CModDlgParams * pModParams;
 
 	switch (message)
 	{
 	case WM_INITDIALOG:
 		{
-			pP = (CModDlgParams *) lParam;
-			SetDlgItemText( hDlg, IDC_DRIVE, pP->szVolName );
+			pModParams = (CModDlgParams *) lParam;
+			SetDlgItemText( hDlg, IDC_DRIVE, pModParams->szVolName );
 
 			WCHAR szBufferW[20];
 
-			StrFormatByteSizeW( pP->DriveSize, szBufferW, _countof( szBufferW ) );
+			StrFormatByteSizeW( pModParams->DriveSize, szBufferW, _countof( szBufferW ) );
 			{
 			CW2CT pT( szBufferW );
 			SetDlgItemText( hDlg, IDC_DRIVE_SIZE, pT );
 			}
 			
-			StrFormatByteSizeW( pP->FreeSpace, szBufferW, _countof( szBufferW ) );
+			StrFormatByteSizeW( pModParams->FreeSpace, szBufferW, _countof( szBufferW ) );
 			{
 			CW2CT pT( szBufferW );
 			SetDlgItemText( hDlg, IDC_DRIVE_FREE, pT );
 			}
 
 			/* Display/edit the threshold value in MB */
-			SetDlgItemInt( hDlg, IDC_ALARMAT, static_cast<UINT>(pP->AlarmAtMB/AMEGABYTE), false );
+			SetDlgItemInt( hDlg, IDC_ALARMAT, static_cast<UINT>(pModParams->AlarmAtMB/AMEGABYTE), false );
 		}
 		return TRUE;
 
@@ -337,8 +286,8 @@ LRESULT CALLBACK ModifyDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 		switch( LOWORD(wParam ) )
 		{
 		case IDOK:
-			pP->AlarmAtMB = GetDlgItemInt( hDlg, IDC_ALARMAT, NULL, false );
-			pP->AlarmAtMB *= AMEGABYTE;
+			pModParams->AlarmAtMB = GetDlgItemInt( hDlg, IDC_ALARMAT, NULL, false );
+			pModParams->AlarmAtMB *= AMEGABYTE;
 			[[fallthrough]];	// Intentional!
 
 		case IDCANCEL:
@@ -347,8 +296,8 @@ LRESULT CALLBACK ModifyDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
 		case IDC_PRESET:
 			/* Calculate 15% of the capacity */
-			pP->AlarmAtMB = ( pP->DriveSize * 15 ) / 100;
-			SetDlgItemInt( hDlg, IDC_ALARMAT, static_cast<UINT>(pP->AlarmAtMB/AMEGABYTE), false );
+			pModParams->AlarmAtMB = ( pModParams->DriveSize * 15 ) / 100;
+			SetDlgItemInt( hDlg, IDC_ALARMAT, static_cast<UINT>(pModParams->AlarmAtMB/AMEGABYTE), false );
 			return TRUE;
 		}
 		break;
@@ -366,6 +315,37 @@ static bool IsWin98()
 	return ( g_vi.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS ) && ( g_vi.dwMajorVersion >= 4 ) && ( g_vi.dwMinorVersion >= 10 );
 }
 #endif
+
+static int MessageBoxForSystemError( HWND hDlg, DWORD ErrorValue, LPCTSTR pAppName, int MsgBoxFlags )
+{
+	int rv;
+	LPTSTR lpMsgBuf;
+	if ( FormatMessage(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER |
+		FORMAT_MESSAGE_FROM_SYSTEM |
+		FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL,
+		ErrorValue,
+		MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ), // Default language
+		(LPTSTR) &lpMsgBuf,
+		0,
+		NULL ) )
+	{
+		// Display the string.
+		rv = MessageBox( hDlg, lpMsgBuf, pAppName, MsgBoxFlags );
+
+		// Free the buffer.
+		LocalFree( lpMsgBuf );
+	}
+	else
+	{
+		_ASSERT( false );
+		rv = 0;
+	}
+
+	return rv;
+}
+
 LRESULT CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	static bool g_bModified = false;
@@ -382,20 +362,6 @@ LRESULT CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
 			/* Initialise the columns of the list control */
 			{
-				int CharWidth;
-
-				/* Get the pixel width of a character in this dialog box font */
-				{
-					TEXTMETRIC tm;
-					HDC hDC = GetDC( hList );
-
-					GetTextMetrics( hDC, &tm );
-
-					CharWidth = tm.tmAveCharWidth;
-
-					ReleaseDC( hDlg, hDC );
-				}
-
 				/* Load the custom resource containing the column sizes.
 				 * Only need to do this once, hence the static here.
 				 */
@@ -429,19 +395,38 @@ LRESULT CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 					}
 				}
 
-				for ( UINT ColNo = 0; ColNo < _countof(g_columnFmts); ColNo++ )
 				{
-					LVCOLUMN lvc;
-					lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
-					lvc.fmt = g_columnFmts[ColNo].Align;
+					const auto CharWidth = [hList]()
+					{
+						HDC hDC = GetDC( hList );
+						TEXTMETRIC tm;
+						const auto tmRet = GetTextMetrics( hDC, &tm );
+						_ASSERT( tmRet );
+						ReleaseDC( hList, hDC );
+						return tm.tmAveCharWidth;
+					}();
 
-					CString sCaption;
-					sCaption.LoadString( g_hResInst, g_columnFmts[ColNo].StringID );
-					lvc.pszText = const_cast<LPTSTR>(static_cast<LPCTSTR>(sCaption));
+					for ( size_t ColNo = 0; ColNo < _countof( g_columnFmts ); ColNo++ )
+					{
+						LVCOLUMN lvc;
+						lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+						lvc.fmt = g_columnFmts[ColNo].Align;
 
-					lvc.cx = g_columnFmts[ColNo].WidthInChars * CharWidth;
+						CString sCaption;
+						if ( sCaption.LoadString( g_hResInst, g_columnFmts[ColNo].StringID ) )
+						{
+							lvc.pszText = const_cast<LPTSTR>(static_cast<LPCTSTR>(sCaption));
+						}
+						else
+						{
+							// What's happened to the string?
+							_ASSERT( false );
+						}
 
-					ListView_InsertColumn( hList, ColNo, &lvc );
+						lvc.cx = g_columnFmts[ColNo].WidthInChars * CharWidth;
+
+						ListView_InsertColumn( hList, ColNo, &lvc );
+					}
 				}
 
 				/* Populate the list */
@@ -641,7 +626,8 @@ LRESULT CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 						}
 						else
 						{
-							ResMessageBox( hDlg, IDS_FAILED_WRITE_REG/*_T("Failed to write the values to the registry")*/, szAppName, MB_OK | MB_ICONINFORMATION );
+							// "Failed to write the values to the registry"
+							ResMessageBox( hDlg, IDS_FAILED_WRITE_REG, szAppName, MB_OK | MB_ICONINFORMATION );
 						}
 
 						RegCloseKey( hKey );
@@ -657,29 +643,7 @@ LRESULT CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 						else
 						{
 							/* Report the system error we get back */
-							LPVOID lpMsgBuf;
-							if (FormatMessage( 
-								FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-								FORMAT_MESSAGE_FROM_SYSTEM | 
-								FORMAT_MESSAGE_IGNORE_INSERTS,
-								NULL,
-								RegRes,
-								MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-								(LPTSTR) &lpMsgBuf,
-								0,
-								NULL ))
-							{
-								// Display the string.
-								MessageBox( hDlg, (LPCTSTR)lpMsgBuf, szAppName, MB_OK | MB_ICONINFORMATION );
-
-								// Free the buffer.
-								LocalFree( lpMsgBuf );
-							}
-							else
-							{
-								// Handle the error.
-			//					return;
-							}
+							MessageBoxForSystemError( hDlg, RegRes, szAppName, MB_OK | MB_ICONINFORMATION );
 						}
 					}
 
@@ -701,27 +665,7 @@ LRESULT CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 							}
 							else
 							{
-								LPVOID lpMsgBuf;
-								if (FormatMessage( 
-									FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-									FORMAT_MESSAGE_FROM_SYSTEM | 
-									FORMAT_MESSAGE_IGNORE_INSERTS,
-									NULL,
-									RegRes1,
-									MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-									(LPTSTR) &lpMsgBuf,
-									0,
-									NULL ))
-								{
-									// Display the string.
-									MessageBox( hDlg, (LPCTSTR)lpMsgBuf, szAppName, MB_OK | MB_ICONINFORMATION );
-
-									// Free the buffer.
-									LocalFree( lpMsgBuf );
-								}
-								else
-								{
-								}
+								MessageBoxForSystemError( hDlg, RegRes1, szAppName, MB_OK | MB_ICONINFORMATION );
 							}
 
 							RegCloseKey( hKey );
@@ -741,29 +685,7 @@ LRESULT CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 								else
 								{
 									/* Report the system error we get back */
-									LPVOID lpMsgBuf;
-									if (FormatMessage( 
-										FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-										FORMAT_MESSAGE_FROM_SYSTEM | 
-										FORMAT_MESSAGE_IGNORE_INSERTS,
-										NULL,
-										RegRes,
-										MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-										(LPTSTR) &lpMsgBuf,
-										0,
-										NULL ))
-									{
-										// Display the string.
-										MessageBox( hDlg, (LPCTSTR)lpMsgBuf, szAppName, MB_OK | MB_ICONINFORMATION );
-
-										// Free the buffer.
-										LocalFree( lpMsgBuf );
-									}
-									else
-									{
-										// Handle the error.
-					//					return;
-									}
+									MessageBoxForSystemError( hDlg, RegRes, szAppName, MB_OK | MB_ICONINFORMATION );
 								}
 							}
 						}
@@ -841,30 +763,30 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_COMMAND:
 		{
-		int wmId, wmEvent;
-		wmId    = LOWORD(wParam); 
-		wmEvent = HIWORD(wParam);
-		static bool bInHere = false;
-		// Parse the menu selections:
-		switch (wmId)
-		{
-		case ID_CONFIG:
-			if ( !bInHere )
+			int wmId, wmEvent;
+			wmId = LOWORD( wParam );
+			wmEvent = HIWORD( wParam );
+			static bool bInHere = false;
+			// Parse the menu selections:
+			switch ( wmId )
 			{
-				bInHere = true;
-				DialogBox(g_hResInst, MAKEINTRESOURCE( IDD_CONFIG_DLG ), hWnd, (DLGPROC)ConfigDlg);
-#ifndef _DEBUG
-				PostMessage( hWnd, WM_CLOSE, 0, 0 );
-#endif
-				bInHere = false;
-			}
-			else
-			{
-//				::BringWindowToTop( hWnd );
-			}
-			break;
+			case ID_CONFIG:
+				if ( !bInHere )
+				{
+					bInHere = true;
+					DialogBox( g_hResInst, MAKEINTRESOURCE( IDD_CONFIG_DLG ), hWnd, (DLGPROC) ConfigDlg );
+	#ifndef _DEBUG
+					PostMessage( hWnd, WM_CLOSE, 0, 0 );
+	#endif
+					bInHere = false;
+				}
+				else
+				{
+					//				::BringWindowToTop( hWnd );
+				}
+				break;
 
-		case IDM_ABOUT:
+			case IDM_ABOUT:
 			{
 				HWND hParent;
 
@@ -880,23 +802,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 
 				AboutHandler( hParent,
-								g_RegData,
-								g_hResInst,
-								szAppName,
-								L"Thanks for using Space Patrol",
-								szRegistryKey,
-								ProductCode::SpacePatrol,
-								IDS_CLOSE_FOR_REG );
+					g_RegData,
+					g_hResInst,
+					szAppName,
+					L"Thanks for using Space Patrol",
+					szRegistryKey,
+					ProductCode::SpacePatrol,
+					IDS_CLOSE_FOR_REG );
 			}
 			break;
 
-		case IDM_EXIT:
-			DestroyWindow(hWnd);
-			break;
+			case IDM_EXIT:
+				DestroyWindow( hWnd );
+				break;
 
-		default:
-			return DefWindowProc(hWnd, message, wParam, lParam);
-		}
+			default:
+				return DefWindowProc( hWnd, message, wParam, lParam );
+			}
 		}
 		break;
 
@@ -981,7 +903,7 @@ static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	LoadGlobalSettingsFromReg();
 
 	HWND hWnd = CreateWindow(szWindowClass, szAppName, WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT, 350, 100, NULL, NULL, hInstance, NULL);
+							CW_USEDEFAULT, CW_USEDEFAULT, 350, 100, NULL, NULL, hInstance, NULL);
 
 	if (!hWnd)
 	{
@@ -1013,7 +935,15 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	HACCEL hAccelTable;
 
 	// Initialize global strings
-	LoadString(hInstance, IDS_APP_TITLE, szAppName, std::size( szAppName ) );
+	if ( LoadString( hInstance, IDS_APP_TITLE, szAppName, std::size( szAppName ) ) )
+	{
+
+	}
+	else
+	{
+		// What's happened to the string?
+		_ASSERT( false );
+	}
 //	LoadString(hInstance, IDC_SPACECON, szWindowClass, _countof( szWindowClass ) );
 	MyRegisterClass(hInstance);
 
