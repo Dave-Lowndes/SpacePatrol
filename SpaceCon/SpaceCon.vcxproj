@@ -80,6 +80,8 @@
       <AdditionalIncludeDirectories>..\..\CommonAboutBoxV3Reg;..\..\RegGen;..\..\CommonCode;</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
+      <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
     </ClCompile>
     <Link>
       <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
@@ -111,11 +113,12 @@ REM echo %SignToolPath%
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
-      <DebugInformationFormat>
-      </DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>..\..\CommonAboutBoxV3Reg;..\..\RegGen;..\..\CommonCode;</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
+      <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
     </ClCompile>
     <Link>
       <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>

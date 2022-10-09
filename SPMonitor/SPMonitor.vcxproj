@@ -72,6 +72,8 @@
       <AdditionalIncludeDirectories>..\..\CommonAboutBoxV3Reg;..\..\RegGen;..\..\CommonCode;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
+      <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -99,6 +101,8 @@ REM echo %SignToolPath%
       <AdditionalIncludeDirectories>..\..\CommonAboutBoxV3Reg;..\..\RegGen;..\..\CommonCode;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
+      <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
