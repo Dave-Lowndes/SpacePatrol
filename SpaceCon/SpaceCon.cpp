@@ -935,16 +935,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	HACCEL hAccelTable;
 
 	// Initialize global strings
-	if ( LoadString( hInstance, IDS_APP_TITLE, szAppName, std::size( szAppName ) ) )
-	{
+	LoadStringChecked( hInstance, IDS_APP_TITLE, szAppName, std::size( szAppName ) );
 
-	}
-	else
-	{
-		// What's happened to the string?
-		_ASSERT( false );
-	}
-//	LoadString(hInstance, IDC_SPACECON, szWindowClass, _countof( szWindowClass ) );
 	MyRegisterClass(hInstance);
 
 	// Perform application initialization:

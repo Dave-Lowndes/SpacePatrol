@@ -128,11 +128,12 @@ static void HandleMonitorTimer( HWND hWnd )
 						CW2CT pSpaceRemainingText( szSpaceRemainingW );
 
 						TCHAR szInfoFmt[256];
-						LoadString( g_hResInst, IDS_TT_INFO_FMT, szInfoFmt, std::size( szInfoFmt ) );
-						/*_T("Low Disk Space Notification\nDrive %c: %s")*/
-						_stprintf( nid.szInfo, szInfoFmt, _T('A') + dNum, static_cast<LPCTSTR>(pSpaceRemainingText) );
+						LoadStringChecked( g_hResInst, IDS_TT_INFO_FMT, szInfoFmt, std::size( szInfoFmt ) );
 
-						LoadString( g_hResInst, IDS_LDS_CAPTION, nid.szInfoTitle, std::size( nid.szInfoTitle ) );
+						/*_T("Low Disk Space Notification\nDrive %c: %s")*/
+						_stprintf( nid.szInfo, szInfoFmt, _T( 'A' ) + dNum, static_cast<LPCTSTR>(pSpaceRemainingText) );
+
+						LoadStringChecked( g_hResInst, IDS_LDS_CAPTION, nid.szInfoTitle, std::size( nid.szInfoTitle ) );
 
 						nid.uFlags = NIF_INFO;
 						nid.uTimeout = TOOLTIP_DISPLAY_TIME;
@@ -158,6 +159,8 @@ static void HandleMonitorTimer( HWND hWnd )
 							}
 						}
 
+						const auto tcNow = GetTickCount();
+
 						/* Are we already displaying this drive's icon? */
 						if ( !( g_DriveIconDisplayed & (1 << dNum ) ) )
 						{
@@ -169,14 +172,16 @@ static void HandleMonitorTimer( HWND hWnd )
 							nid.hIcon = (HICON) LoadImage( g_hInstance, MAKEINTRESOURCE( IDI_SMALL ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR );
 
 							TCHAR szTipFmt[128];
-							LoadString( g_hResInst, IDS_TT_TIP_FMT, szTipFmt, std::size( szTipFmt ) );
-							_stprintf( nid.szTip, szTipFmt/*_T("JD Design Space Control: Low disk space on drive %c: %s")*/, _T('A') + dNum, static_cast<LPCTSTR>(pSpaceRemainingText) );
+							LoadStringChecked( g_hResInst, IDS_TT_TIP_FMT, szTipFmt, std::size( szTipFmt ) );
+
+							// "JD Design Space Control: Low disk space on drive %c: %s"
+							_stprintf( nid.szTip, szTipFmt, _T( 'A' ) + dNum, static_cast<LPCTSTR>(pSpaceRemainingText) );
 
 							if ( Shell_NotifyIcon( NIM_ADD, &nid ) )
 							{
 								/* added OK */
 								/* Record when this icon appears so we can refresh the balloon tooltip after a longer delay */
-								DriveNI[dNum].LastDisplayedTime = GetTickCount();
+								DriveNI[dNum].LastDisplayedTime = tcNow;
 
 								/* Indicate that we're displaying the icon for this drive */
 								g_DriveIconDisplayed |= (1 << dNum );
@@ -196,7 +201,7 @@ static void HandleMonitorTimer( HWND hWnd )
 						else
 						{
 							/* Already displaying, has the time period expired for a refresh? */
-							if ( GetTickCount() - DriveNI[dNum].LastDisplayedTime >= DriveNI[dNum].RedisplayPeriod )
+							if ( tcNow - DriveNI[dNum].LastDisplayedTime >= DriveNI[dNum].RedisplayPeriod )
 							{
 								/* It's expired, refresh it unless the user has prevented the updating for this drive. */
 								if ( !(g_bNoRefreshTip & (1 << dNum)) )
@@ -205,7 +210,7 @@ static void HandleMonitorTimer( HWND hWnd )
 									{
 										/* added OK */
 										/* Record when this icon appears so we can refresh the balloon tooltip after a longer delay */
-										DriveNI[dNum].LastDisplayedTime = GetTickCount();
+										DriveNI[dNum].LastDisplayedTime = tcNow;
 
 										/* Increase the period so that each time takes longer */
 										/* But don't wait too long */
@@ -305,8 +310,16 @@ static UINT TimedMessageBox( HWND hwndParent, LPCTSTR ptszMessage, LPCTSTR ptszT
 static int ResTimedMessageBox( HWND hWnd, int ResId, LPCTSTR pCaption, const int Flags, DWORD dwTimeout )
 {
 	CString sMsg;
-	sMsg.LoadString( g_hResInst, ResId );
-	return( TimedMessageBox( hWnd, sMsg, pCaption, Flags, dwTimeout ) );
+	if ( sMsg.LoadString( g_hResInst, ResId ) )
+	{
+		return(TimedMessageBox( hWnd, sMsg, pCaption, Flags, dwTimeout ));
+	}
+	else
+	{
+		// What happened to the string?
+		_ASSERT( false );
+		return MB_OK;
+	}
 }
 
 static unsigned int __stdcall MonitorChangesThread( void * param ) noexcept
@@ -732,20 +745,17 @@ static UINT g_TaskBarCreated = 0;
 						CW2CT pSpaceRemainingText( szSpaceRemainingW );
 
 						TCHAR szTipFmt[ 128 ];
+						LoadStringChecked( g_hResInst, IDS_TT_TIP_FMT, szTipFmt, std::size( szTipFmt ) );
 
-						/*const int NumCharsLoaded = */LoadString( g_hResInst, IDS_TT_TIP_FMT, szTipFmt, std::size( szTipFmt ) );
-//						if ( NumCharsLoaded  < DIM( szTipFmt )-1 )
-						{
-							/*_T("JD Design Space Control: Low disk space on drive %c: %s")*/
-							_stprintf( nid.szTip, szTipFmt, _T('A') + DriveNum, static_cast<LPCTSTR>(pSpaceRemainingText) );
+						/*_T("JD Design Space Control: Low disk space on drive %c: %s")*/
+						_stprintf( nid.szTip, szTipFmt, _T( 'A' ) + DriveNum, static_cast<LPCTSTR>(pSpaceRemainingText) );
 
-							nid.uFlags = NIF_TIP;
-							nid.uTimeout = TOOLTIP_DISPLAY_TIME;
-							nid.dwInfoFlags = 0;
+						nid.uFlags = NIF_TIP;
+						nid.uTimeout = TOOLTIP_DISPLAY_TIME;
+						nid.dwInfoFlags = 0;
 
-							/* Update the tip */
-							Shell_NotifyIcon( NIM_MODIFY, &nid );
-						}
+						/* Update the tip */
+						Shell_NotifyIcon( NIM_MODIFY, &nid );
 					}
 				}
 				break;
@@ -805,7 +815,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 
 	// Initialize global strings
-	LoadString(hInstance, IDS_APP_TITLE, szAppName, std::size( szAppName ));
+	LoadStringChecked( hInstance, IDS_APP_TITLE, szAppName, std::size( szAppName ) );
+
 	MyRegisterClass(hInstance);
 
 	// Perform application initialization:

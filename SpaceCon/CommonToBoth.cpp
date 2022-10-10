@@ -30,37 +30,12 @@ void LoadGlobalSettingsFromReg() noexcept
 		}
 		else
 		{
-			//			MessageBox( NULL, _T("Failed to read the values in the registry"), szAppName, MB_OK | MB_ICONINFORMATION );
+//			MessageBox( NULL, _T("Failed to read the values in the registry"), szAppName, MB_OK | MB_ICONINFORMATION );
 		}
 	}
 	else
 	{
 		/* Failed to open/create the registry key. Probably don't have permission to do it - or it doesn't yet exist! */
-#if 0	// Can't see the point in reporting this
-		LPVOID lpMsgBuf;
-		if ( FormatMessage(
-			FORMAT_MESSAGE_ALLOCATE_BUFFER |
-			FORMAT_MESSAGE_FROM_SYSTEM |
-			FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL,
-			RegRes,
-			MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ), // Default language
-			(LPTSTR) &lpMsgBuf,
-			0,
-			NULL ) )
-		{
-			// Display the string.
-			MessageBox( NULL, (LPCTSTR) lpMsgBuf, szAppName, MB_OK | MB_ICONINFORMATION );
-
-			// Free the buffer.
-			LocalFree( lpMsgBuf );
-		}
-		else
-		{
-			// Handle the error.
-	//					return;
-		}
-#endif
 	}
 }
 

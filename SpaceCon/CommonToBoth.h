@@ -31,3 +31,13 @@ extern void InitEvents();
 /* The following are the names of the registry keys and values */
 constexpr const TCHAR szRegistryKey[] = _T( "Software\\JD Design\\SpaceCon" );
 constexpr LPCTSTR SETTINGS = _T( "DriveSettings" );
+
+inline void LoadStringChecked( HINSTANCE hInstance, UINT uID, LPTSTR lpBuffer, int cchBufferMax )
+{
+#if _DEBUG
+const int NumCharsLoaded =
+#endif
+	LoadString( hInstance, uID, lpBuffer, cchBufferMax );
+	// Resource string must be present
+	_ASSERT( NumCharsLoaded != 0 );
+}
