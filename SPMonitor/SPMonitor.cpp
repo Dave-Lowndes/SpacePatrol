@@ -36,9 +36,6 @@ static optional<CMyRegData> g_RegData;
 #define UWM_RELOAD_SETTINGS	WM_USER+2
 #define UWM_RESTART_ME		WM_USER+3
 
-/* The OS version information */
-//static OSVERSIONINFO g_vi;
-
 static HANDLE g_hNotifyThread;	// Thread handle of the notification thread that monitors for settings changes
 
 /* The following are the names of the registry keys and values */

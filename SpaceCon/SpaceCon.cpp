@@ -42,7 +42,6 @@ static LPCTSTR szWindowClass = _T("JDDESIGN_SPACECON");
 #define EXPLORER_KEY _T("Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer")
 #define EXPLORER_VAL _T("NoLowDiskSpaceChecks")
 
-//static BOOL bREGISTERED;
 static optional<CMyRegData> g_RegData;
 
 #define AMEGABYTE	(1024*1024)
@@ -400,7 +399,10 @@ LRESULT CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 					{
 						HDC hDC = GetDC( hList );
 						TEXTMETRIC tm;
-						const auto tmRet = GetTextMetrics( hDC, &tm );
+#ifdef _DEBUG
+						const auto tmRet =
+#endif
+							GetTextMetrics( hDC, &tm );
 						_ASSERT( tmRet );
 						ReleaseDC( hList, hDC );
 						return tm.tmAveCharWidth;
@@ -809,6 +811,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					szRegistryKey,
 					ProductCode::SpacePatrol,
 					IDS_CLOSE_FOR_REG );
+
+				/* Restart any running monitor instances so they get the registration changes */
+				PulseEvent( g_hEvents[EVT_RESTARTMONITORS] );
 			}
 			break;
 
@@ -868,10 +873,6 @@ static ATOM MyRegisterClass(HINSTANCE hInstance) noexcept
 static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
 	g_hResInst = g_hInstance = hInstance; // Store instance handle in our global variable
-
-	/* Get the OS information for some decisions we need */
-	//g_vi.dwOSVersionInfoSize = sizeof( g_vi );
-	//GetVersionEx( &g_vi );
 
 	InitEvents();
 
