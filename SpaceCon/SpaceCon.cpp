@@ -395,17 +395,32 @@ INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 				}
 
 				{
-					const auto CharWidth = [hList]()
+					const LONG CharWidth = [hList]()
 					{
 						HDC hDC = GetDC( hList );
-						TEXTMETRIC tm;
+
+						// Don't use tmAveCharWidth. See https://devblogs.microsoft.com/oldnewthing/20221103-00/?p=107350
+						constexpr char AllLetters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+						constexpr size_t NumLetters{ 52 };
+						static_assert(sizeof(AllLetters)-1 == NumLetters);
+						SIZE siz;
+						LONG AveWidth;
+						if ( GetTextExtentPoint32A( hDC, AllLetters, NumLetters, &siz) )
+						{
+							AveWidth = siz.cx / NumLetters;
+						}
+						else
+						{
+							TEXTMETRIC tm;
 #ifdef _DEBUG
-						const auto tmRet =
+							const auto tmRet =
 #endif
-							GetTextMetrics( hDC, &tm );
-						_ASSERT( tmRet );
+								GetTextMetrics( hDC, &tm );
+							_ASSERT( tmRet );
+							AveWidth = tm.tmAveCharWidth;
+						}
 						ReleaseDC( hList, hDC );
-						return tm.tmAveCharWidth;
+						return AveWidth;
 					}();
 
 					for ( size_t ColNo = 0; ColNo < _countof( g_columnFmts ); ColNo++ )
