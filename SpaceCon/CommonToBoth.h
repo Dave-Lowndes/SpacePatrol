@@ -37,7 +37,7 @@ inline void LoadStringChecked( HINSTANCE hInstance, UINT uID, LPTSTR lpBuffer, i
 #if _DEBUG
 const int NumCharsLoaded =
 #endif
-	LoadString( hInstance, uID, lpBuffer, cchBufferMax );
+	LoadString( hInstance, uID, lpBuffer, cchBufferMax );	//-V530
 	// Resource string must be present
 	_ASSERT( NumCharsLoaded != 0 );
 }

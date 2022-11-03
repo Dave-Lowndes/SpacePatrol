@@ -107,10 +107,10 @@ static void UpdateDriveInformation( HWND hList, int Item, WORD DriveNum, LPCTSTR
 		pItemData = new CModDlgParams();
 
 		pItemData->DriveNum = DriveNum;
-		lstrcpyn( pItemData->szDrive, pDrive, _countof( pItemData->szDrive ) );
+		StringCchCopy( pItemData->szDrive, _countof( pItemData->szDrive ), pDrive );
 
 		/* Get the cosmetic drive name */
-		SHFILEINFO sfi;
+		SHFILEINFO sfi{ 0 };	// Init only to silence the compiler warning unnecessarily
 		if ( SHGetFileInfo( pItemData->szDrive, FILE_ATTRIBUTE_DIRECTORY, &sfi, sizeof( sfi ), SHGFI_DISPLAYNAME ) )
 		{
 			StringCchCopy( pItemData->szVolName, _countof( pItemData->szVolName ), sfi.szDisplayName );
@@ -124,7 +124,7 @@ static void UpdateDriveInformation( HWND hList, int Item, WORD DriveNum, LPCTSTR
 		 * change notification happens as a result of subsequent operations here,
 		 * I need to set up the drive number ready to handle this.
 		 */
-		lvi.lParam = (LPARAM) (DWORD_PTR) pItemData;
+		lvi.lParam = reinterpret_cast<LPARAM>( pItemData );
 
 		/* Can't set the check box when inserting */
 		ListView_InsertItem( hList, &lvi );
@@ -137,7 +137,7 @@ static void UpdateDriveInformation( HWND hList, int Item, WORD DriveNum, LPCTSTR
 		lvi.mask = LVIF_PARAM;
 		lvi.iItem = Item;
 		ListView_GetItem( hList, &lvi );
-        pItemData = (CModDlgParams *) lvi.lParam;
+        pItemData = reinterpret_cast<CModDlgParams *>( lvi.lParam );
 	}
 
 	ULARGE_INTEGER CallerFreeBytes, TotalBytes, TotalFreeBytes;
@@ -153,7 +153,7 @@ static void UpdateDriveInformation( HWND hList, int Item, WORD DriveNum, LPCTSTR
 		CW2T pT( szBufferW );
 		lvi.pszText = pT;
 		lvi.iSubItem = COL_SIZE;
-		::SendMessage( hList, LVM_SETITEMTEXT, Item, (LPARAM) &lvi );
+		::SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>( &lvi ) );
 		}
 
 		StrFormatByteSizeW( TotalFreeBytes.QuadPart, szBufferW, _countof( szBufferW ) );
@@ -161,7 +161,7 @@ static void UpdateDriveInformation( HWND hList, int Item, WORD DriveNum, LPCTSTR
 		CW2T pT( szBufferW );
 		lvi.pszText = pT;
 		lvi.iSubItem = COL_TOT_FREE;
-		::SendMessage( hList, LVM_SETITEMTEXT, Item, (LPARAM) &lvi );
+		::SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>( &lvi ) );
 		}
 
 		pItemData->DriveSize = TotalBytes.QuadPart;
@@ -182,7 +182,7 @@ static void UpdateDriveInformation( HWND hList, int Item, WORD DriveNum, LPCTSTR
 		CW2T pT( szBufferW );
 		lvi.pszText = pT;
 		lvi.iSubItem = COL_NOTIFY;
-		::SendMessage( hList, LVM_SETITEMTEXT, Item, (LPARAM) &lvi );
+		::SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>( &lvi ) );
 //		ListView_SetItemText( hList, Item, COL_NOTIFY, szBufferW );
 
 		pItemData->AlarmAtMB = g_DriveConfig[ pItemData->DriveNum ].AlarmAt;
@@ -235,7 +235,7 @@ static void UpdateDriveInformation( HWND hList, int Item, WORD DriveNum, LPCTSTR
 			{
 				lvi.pszText = const_cast<LPTSTR>(static_cast<LPCTSTR>(str));
 
-				SendMessage( hList, LVM_SETITEMTEXT, Item, (LPARAM) &lvi );
+				SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>( &lvi ) );
 			}
 			else
 			{
@@ -246,12 +246,12 @@ static void UpdateDriveInformation( HWND hList, int Item, WORD DriveNum, LPCTSTR
 		else
 		{
 			lvi.pszText = nullptr;
-			SendMessage( hList, LVM_SETITEMTEXT, Item, (LPARAM) &lvi );
+			SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>( &lvi ) );
 		}
 	}
 }
 
-LRESULT CALLBACK ModifyDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK ModifyDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	static CModDlgParams * pModParams;
 
@@ -259,7 +259,7 @@ LRESULT CALLBACK ModifyDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 	{
 	case WM_INITDIALOG:
 		{
-			pModParams = (CModDlgParams *) lParam;
+			pModParams = reinterpret_cast<CModDlgParams *>( lParam );
 			SetDlgItemText( hDlg, IDC_DRIVE, pModParams->szVolName );
 
 			WCHAR szBufferW[20];
@@ -326,7 +326,7 @@ static int MessageBoxForSystemError( HWND hDlg, DWORD ErrorValue, LPCTSTR pAppNa
 		NULL,
 		ErrorValue,
 		MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ), // Default language
-		(LPTSTR) &lpMsgBuf,
+		reinterpret_cast<LPTSTR>( &lpMsgBuf ),
 		0,
 		NULL ) )
 	{
@@ -345,7 +345,7 @@ static int MessageBoxForSystemError( HWND hDlg, DWORD ErrorValue, LPCTSTR pAppNa
 	return rv;
 }
 
-LRESULT CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	static bool g_bModified = false;
 
@@ -375,7 +375,7 @@ LRESULT CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
 						if ( hCols != NULL )
 						{
-							const LPCBYTE pCols = (LPCBYTE) LockResource( hCols );
+							const LPCBYTE pCols = static_cast<LPCBYTE>( LockResource( hCols ) );
 
 							DWORD csResSize = SizeofResource( g_hResInst, hRsrc );
 
@@ -427,7 +427,7 @@ LRESULT CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
 						lvc.cx = g_columnFmts[ColNo].WidthInChars * CharWidth;
 
-						ListView_InsertColumn( hList, ColNo, &lvc );
+						ListView_InsertColumn( hList, ColNo, &lvc );	//-V220
 					}
 				}
 
@@ -460,7 +460,7 @@ LRESULT CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 							}
 
 							/* Next drive letter */
-							pDrive = &pDrive[ lstrlen( pDrive ) + 1 ];
+							pDrive = &pDrive[ lstrlen( pDrive ) + 1 ]; //-V108
 						}
 					}
 
@@ -513,12 +513,12 @@ LRESULT CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
 	case WM_NOTIFY:
 		{
-			LPNMHDR phdr = (LPNMHDR) lParam;
+			LPNMHDR phdr = reinterpret_cast<LPNMHDR>( lParam );
 			switch( phdr->code )
 			{
 			case LVN_ITEMCHANGED:
 				{
-					LPNMLISTVIEW plv = (LPNMLISTVIEW) lParam;
+					LPNMLISTVIEW plv = reinterpret_cast<LPNMLISTVIEW>( lParam );
 					if ( plv->uChanged & LVIF_STATE )
 					{
 						if ( plv->uOldState && ( plv->uNewState & LVIS_STATEIMAGEMASK ) )
@@ -536,7 +536,7 @@ LRESULT CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
 			case LVN_DELETEALLITEMS:
 				{
-					LPNMLISTVIEW pnmv = (LPNMLISTVIEW) lParam;
+					LPNMLISTVIEW pnmv = reinterpret_cast<LPNMLISTVIEW>( lParam );
 
 					const int NumItems = ListView_GetItemCount( pnmv->hdr.hwndFrom );
 
@@ -576,7 +576,7 @@ LRESULT CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 			{
 				const HWND hList = GetDlgItem( hDlg, IDC_LIST );
 
-				const int SelItem = ListView_GetNextItem( hList, -1, LVNI_SELECTED );
+				const int SelItem = ListView_GetNextItem( hList, -1, LVNI_SELECTED );	//-V2005
                 if ( SelItem != -1 )
                 {
 					LVITEM lvi;
@@ -585,7 +585,7 @@ LRESULT CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 					ListView_GetItem( hList, &lvi );
 					CModDlgParams * mp = reinterpret_cast<CModDlgParams *>(lvi.lParam);
 
-                    if ( IDOK == DialogBoxParam( g_hResInst, MAKEINTRESOURCE( IDD_MOD_DLG ), hDlg, (DLGPROC)ModifyDlg, (LPARAM) mp ) )
+                    if ( IDOK == DialogBoxParam( g_hResInst, MAKEINTRESOURCE( IDD_MOD_DLG ), hDlg, ModifyDlg, reinterpret_cast<LPARAM>( mp ) ) )
 					{
 						/* Modified value returned - copy alarm value to global settings */
 						g_DriveConfig[ mp->DriveNum ].AlarmAt = mp->AlarmAtMB;
@@ -621,7 +621,7 @@ LRESULT CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 					if ( ERROR_SUCCESS == RegRes )
 					{
 						/* Store the global structure */
-						RegRes = RegSetValueEx( hKey, SETTINGS, 0, REG_BINARY, (LPBYTE) &g_DriveConfig, sizeof( g_DriveConfig ) );
+						RegRes = RegSetValueEx( hKey, SETTINGS, 0, REG_BINARY, reinterpret_cast<LPCBYTE>( &g_DriveConfig ), sizeof( g_DriveConfig ) );
 
 						if ( ERROR_SUCCESS == RegRes )
 						{
@@ -660,7 +660,7 @@ LRESULT CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 						{
 							const DWORD Value = bEnableOSSettings ? 0: 1;
 
-							const LONG RegRes1 = RegSetValueEx( hKey, EXPLORER_VAL, 0, REG_DWORD, (LPBYTE) &Value, sizeof( Value ) );
+							const LONG RegRes1 = RegSetValueEx( hKey, EXPLORER_VAL, 0, REG_DWORD, reinterpret_cast<LPCBYTE>( &Value ), sizeof( Value ) );
 
 							if ( ERROR_SUCCESS == RegRes1 )
 							{
@@ -710,7 +710,7 @@ LRESULT CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 				if ( !PulseEvent( g_hEvents[EVT_REFRESH] ) )
 				{
 					/* Failed! Debug point only */
-					g_hEvents[EVT_REFRESH] = g_hEvents[EVT_REFRESH];
+					_ASSERT( false );
 				}
 			}
 			break;
@@ -733,7 +733,7 @@ LRESULT CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 				HWND hWnd = GetParent( hDlg );
 
 				/* Invoke the command, but have it use our window as the parent */
-				PostMessage( hWnd, WM_COMMAND, IDM_ABOUT, (LPARAM) hDlg );
+				PostMessage( hWnd, WM_COMMAND, IDM_ABOUT, reinterpret_cast<LPARAM>( hDlg ) );
 			}
 			return TRUE;
 
@@ -776,7 +776,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				if ( !bInHere )
 				{
 					bInHere = true;
-					DialogBox( g_hResInst, MAKEINTRESOURCE( IDD_CONFIG_DLG ), hWnd, (DLGPROC) ConfigDlg );
+					DialogBox( g_hResInst, MAKEINTRESOURCE( IDD_CONFIG_DLG ), hWnd, ConfigDlg );
 	#ifndef _DEBUG
 					PostMessage( hWnd, WM_CLOSE, 0, 0 );
 	#endif
@@ -800,7 +800,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 				else
 				{
-					hParent = (HWND) lParam;
+					hParent = reinterpret_cast<HWND>( lParam );
 				}
 
 				AboutHandler( hParent,
@@ -856,7 +856,7 @@ static ATOM MyRegisterClass(HINSTANCE hInstance) noexcept
 	wcex.cbSize = sizeof(WNDCLASSEX); 
 
 	wcex.style			= CS_HREDRAW | CS_VREDRAW;
-	wcex.lpfnWndProc	= (WNDPROC)WndProc;
+	wcex.lpfnWndProc	= WndProc;
 	wcex.cbClsExtra		= 0;
 	wcex.cbWndExtra		= 0;
 	wcex.hInstance		= hInstance;
@@ -877,7 +877,7 @@ static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	InitEvents();
 
 	/* Process command line switches */
-	for ( int indx = 1; indx < __argc; indx++ )
+	for ( size_t indx = 1; indx < static_cast<size_t>(__argc); ++indx )
 	{
 		/* Is it a switch character? */
 		const TCHAR chSw = __targv[indx][0];
@@ -924,10 +924,12 @@ static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	return TRUE;
 }
 
-int APIENTRY _tWinMain(HINSTANCE hInstance,
-                     HINSTANCE /*hPrevInstance*/,
-                     LPTSTR    /*lpCmdLine*/,
-                     int       nCmdShow)
+int WINAPI wWinMain(
+	_In_ HINSTANCE hInstance,
+	_In_opt_ HINSTANCE /*hPrevInstance*/,
+	_In_ LPWSTR /*lpCmdLine*/,
+	_In_ int nShowCmd
+	)
 {
 	/* Debug version memory leak checking */
 	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
@@ -941,7 +943,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	MyRegisterClass(hInstance);
 
 	// Perform application initialization:
-	if (!InitInstance (hInstance, nCmdShow)) 
+	if (!InitInstance (hInstance, nShowCmd)) 
 	{
 		return FALSE;
 	}
@@ -958,5 +960,5 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		}
 	}
 
-	return (int) msg.wParam;
+	return static_cast<int>( msg.wParam );
 }

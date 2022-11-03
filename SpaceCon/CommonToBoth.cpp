@@ -86,13 +86,13 @@ static PVOID BuildRestrictedSD( PSECURITY_DESCRIPTOR pSD ) noexcept
 		// LookupAccountSid() API based on a user or group name.
 
 		// calculate the DACL length
-		const DWORD dwAclLength = sizeof( ACL )
+		const DWORD dwAclLength = sizeof( ACL )	//-V::119,103
 			// add space for Authenticated Users group ACE
 			+ sizeof( ACCESS_ALLOWED_ACE ) - sizeof( DWORD )
 			+ GetLengthSid( pAuthenticatedUsersSID );
 
 		// allocate memory for the DACL
-		pDACL = (PACL) malloc( dwAclLength );
+		pDACL = static_cast<PACL>( malloc( dwAclLength ) );
 		if ( !pDACL )
 		{
 			//			printf("HeapAlloc() failed with error %d\n", GetLastError());
@@ -165,6 +165,7 @@ void InitEvents()
 #ifdef RESTRICTED_ACCESS_SD
 		// build a restricted security descriptor
 		PVOID ptr = BuildRestrictedSD( &sd );
+#if 0 //Old Win9x code
 		if ( ptr == nullptr )
 		{
 			/* We're probably running on Win9x, so this is expected to fail - do the old thing */
@@ -176,6 +177,8 @@ void InitEvents()
 				}
 			}
 		}
+
+#endif // 0 //Old Win9x code
 #endif
 		SECURITY_ATTRIBUTES sa;
 		// create a mutex using the security descriptor

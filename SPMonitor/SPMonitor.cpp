@@ -128,7 +128,7 @@ static void HandleMonitorTimer( HWND hWnd )
 						LoadStringChecked( g_hResInst, IDS_TT_INFO_FMT, szInfoFmt, std::size( szInfoFmt ) );
 
 						/*_T("Low Disk Space Notification\nDrive %c: %s")*/
-						_stprintf( nid.szInfo, szInfoFmt, _T( 'A' ) + dNum, static_cast<LPCTSTR>(pSpaceRemainingText) );
+						_stprintf( nid.szInfo, szInfoFmt, _T( 'A' ) + dNum, static_cast<LPCTSTR>(pSpaceRemainingText) );	//-V111
 
 						LoadStringChecked( g_hResInst, IDS_LDS_CAPTION, nid.szInfoTitle, std::size( nid.szInfoTitle ) );
 
@@ -155,8 +155,10 @@ static void HandleMonitorTimer( HWND hWnd )
 								nid.dwInfoFlags = NIIF_WARNING;
 							}
 						}
-
+#pragma warning( push )
+#pragma warning( disable:28159 )
 						const auto tcNow = GetTickCount();
+#pragma warning( push )
 
 						/* Are we already displaying this drive's icon? */
 						if ( !( g_DriveIconDisplayed & (1 << dNum ) ) )
@@ -172,7 +174,7 @@ static void HandleMonitorTimer( HWND hWnd )
 							LoadStringChecked( g_hResInst, IDS_TT_TIP_FMT, szTipFmt, std::size( szTipFmt ) );
 
 							// "JD Design Space Control: Low disk space on drive %c: %s"
-							_stprintf( nid.szTip, szTipFmt, _T( 'A' ) + dNum, static_cast<LPCTSTR>(pSpaceRemainingText) );
+							_stprintf( nid.szTip, szTipFmt, _T( 'A' ) + dNum, static_cast<LPCTSTR>(pSpaceRemainingText) );	//-V111
 
 							if ( Shell_NotifyIcon( NIM_ADD, &nid ) )
 							{
@@ -250,7 +252,7 @@ static void HandleMonitorTimer( HWND hWnd )
 			}
 
 			/* Next drive letter */
-			pDrive = &pDrive[ lstrlen( pDrive ) + 1 ];
+			pDrive = &pDrive[ lstrlen( pDrive ) + 1 ];	//-V108
 		}
 	}
 }
@@ -281,7 +283,7 @@ static UINT TimedMessageBox( HWND hwndParent, LPCTSTR ptszMessage, LPCTSTR ptszT
 	lstrcpy( g_szMBCaption, ptszTitle );
 
     /* Set a timer to dismiss the message box. */ 
-    idTimer = SetTimer(NULL, 0, dwTimeout, (TIMERPROC)MessageBoxTimer);
+    idTimer = SetTimer(NULL, 0, dwTimeout, MessageBoxTimer);
 
 	const UINT uiResult = MessageBox(hwndParent, ptszMessage, ptszTitle, flags);
 
@@ -322,7 +324,7 @@ static int ResTimedMessageBox( HWND hWnd, int ResId, LPCTSTR pCaption, const int
 static unsigned int __stdcall MonitorChangesThread( void * param ) noexcept
 {
 	/* I pass the main (invisible) window handle to the thread */
-	HWND hWnd = (HWND) param;
+	HWND hWnd = static_cast<HWND>( param );
 
 	bool bExit = false;
 
@@ -360,7 +362,7 @@ static unsigned int __stdcall MonitorChangesThread( void * param ) noexcept
 
 		default:
 			/* Unexpected! */
-			bExit = bExit;
+			_ASSERT( false );
 			break;
 		}
 	}
@@ -379,7 +381,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) noexcept
 
 	bool bNoNag = false;
 	/* Process command line switches */
-	for ( int indx = 1; indx < __argc; indx++ )
+	for ( size_t indx = 1; indx < static_cast<size_t>(__argc); ++indx )
 	{
 		/* Is it a switch character? */
 		const TCHAR chSw = __targv[indx][0];
@@ -450,7 +452,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) noexcept
 
 	/* Also start the thread that checks for changes from another instance */
 	UINT tid;
-	g_hNotifyThread = (HANDLE) _beginthreadex( nullptr, 0, MonitorChangesThread, hWnd, 0, &tid );
+	g_hNotifyThread = reinterpret_cast<HANDLE>( _beginthreadex( nullptr, 0, MonitorChangesThread, hWnd, 0, &tid ) );
 
 	return TRUE;
 }
@@ -534,7 +536,7 @@ static UINT g_TaskBarCreated = 0;
 			{
 				TCHAR pCmd[] = _T( "/dX" );
 
-				pCmd[2] = _T( 'A' ) + (TCHAR) lParam;	// lParam is drive number
+				pCmd[2] = _T( 'A' ) + static_cast<TCHAR>( lParam );	// lParam is drive number
 
 				// Apparently MS want to remove cleanmgr from Win10, instead I
 				// can invoke the UWP version via a URL:
@@ -551,7 +553,7 @@ static UINT g_TaskBarCreated = 0;
 			{
 				TCHAR pCmd[] = _T( "/e,A:\\" );
 
-				pCmd[3] = _T( 'A' ) + (TCHAR) lParam;	// lParam is drive number
+				pCmd[3] = _T( 'A' ) + static_cast<TCHAR>( lParam );	// lParam is drive number
 
 				ShellExecute( hWnd, nullptr, _T( "explorer" ), pCmd, nullptr, SW_NORMAL );
 			}
@@ -662,7 +664,7 @@ static UINT g_TaskBarCreated = 0;
 	// Notification from the icon
 	case UWM_TIPNOTIFY:
 		{
-			const int DriveNum = (int) wParam;	// wParam is the icon ID (which is the drive number)
+			const int DriveNum = static_cast<int>( wParam );	// wParam is the icon ID (which is the drive number)
 
 			switch (lParam)
 			{
@@ -745,7 +747,7 @@ static UINT g_TaskBarCreated = 0;
 						LoadStringChecked( g_hResInst, IDS_TT_TIP_FMT, szTipFmt, std::size( szTipFmt ) );
 
 						/*_T("JD Design Space Control: Low disk space on drive %c: %s")*/
-						_stprintf( nid.szTip, szTipFmt, _T( 'A' ) + DriveNum, static_cast<LPCTSTR>(pSpaceRemainingText) );
+						_stprintf( nid.szTip, szTipFmt, _T( 'A' ) + DriveNum, static_cast<LPCTSTR>(pSpaceRemainingText) );	//-V111
 
 						nid.uFlags = NIF_TIP;
 						nid.uTimeout = TOOLTIP_DISPLAY_TIME;
@@ -803,10 +805,12 @@ ATOM MyRegisterClass(HINSTANCE hInstance) noexcept
 	return RegisterClassEx(&wcex);
 }
 
-int APIENTRY _tWinMain(HINSTANCE hInstance,
-                     HINSTANCE /*hPrevInstance*/,
-                     LPTSTR    /*lpCmdLine*/,
-                     int       nCmdShow)
+int WINAPI wWinMain(
+	_In_ HINSTANCE hInstance,
+	_In_opt_ HINSTANCE /*hPrevInstance*/,
+	_In_ LPWSTR /*lpCmdLine*/,
+	_In_ int nShowCmd
+	)
 {
 	/* Debug version memory leak checking */
 	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
@@ -817,7 +821,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	MyRegisterClass(hInstance);
 
 	// Perform application initialization:
-	if (!InitInstance (hInstance, nCmdShow))
+	if (!InitInstance (hInstance, nShowCmd))
 	{
 		return FALSE;
 	}
@@ -835,5 +839,5 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		}
 	}
 
-	return (int) msg.wParam;
+	return static_cast<int>( msg.wParam );
 }
