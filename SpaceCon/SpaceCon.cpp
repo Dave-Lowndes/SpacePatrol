@@ -400,14 +400,15 @@ INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 						HDC hDC = GetDC( hList );
 
 						// Don't use tmAveCharWidth. See https://devblogs.microsoft.com/oldnewthing/20221103-00/?p=107350
-						constexpr char AllLetters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+						constexpr static const char AllLetters[]{ "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" };
 						constexpr size_t NumLetters{ 52 };
 						static_assert(sizeof(AllLetters)-1 == NumLetters);
 						SIZE siz;
 						LONG AveWidth;
 						if ( GetTextExtentPoint32A( hDC, AllLetters, NumLetters, &siz) )
 						{
-							AveWidth = siz.cx / NumLetters;
+							// Round to nearest integer
+							AveWidth = (siz.cx + NumLetters/2) / NumLetters;
 						}
 						else
 						{
