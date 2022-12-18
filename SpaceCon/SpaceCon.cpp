@@ -825,6 +825,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					szAppName,
 					L"Thanks for using Space Patrol",
 					szRegistryKey,
+					g_hInstance,
 					ProductCode::SpacePatrol,
 					IDS_CLOSE_FOR_REG );
 
