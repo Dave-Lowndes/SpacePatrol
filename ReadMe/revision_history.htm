@@ -1,5 +1,5 @@
-﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+﻿<!DOCTYPE html>
+<html>
 
 <head>
 <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
@@ -40,67 +40,91 @@ h4
 
 <body>
 
-<h1>Space Patrol Revision History</h1>
-<h4>V2.4&nbsp;&nbsp;&nbsp; 17 October 2022</h4>
+	<h1>Space Patrol Revision History</h1>
+	<h4>V2.4.1.0&nbsp;&nbsp;&nbsp; 2 January 2023</h4>
+	<p>Internal code changes.</p>
+	<h4>V2.4&nbsp;&nbsp;&nbsp; 17 October 2022</h4>
 	<p>Now freely available.</p>
 	<p>Changed the setup - no longer start the programs as they ran as the System account, not the user account.</p>
 	<p>Lots of internal changes to tidy up the code.</p>
-<h4>V2.3.0.2&nbsp;&nbsp;&nbsp; 16 September 2018</h4>
-<p>Fix for the Configure... context menu operation.</p>
-<h4>V2.3.0.1&nbsp;&nbsp;&nbsp; 9 Feb 2018</h4>
-<p>Updated to change the start-up mechanism from using the start-up program 
-folder, to a registry entry under the (32-bit) 
-HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Run key.</p>
-<p>The reason for this change is that the Windows 10 Task Manager Start-up tab 
-(and Windows Settings, Start-up) displayed the Space Patrol Monitor item as a 
-curious number rather than using the program name, which made it look 
-suspicious. Using the registry key to start up the monitor application shows the 
-correct information.</p>
-<p>If you've made any changes to the configuration and haven't applied them, 
-you're now prompted if you try to close the dialog.</p>
-<p>On a clean system with no saved settings, the default alarm at point now 
-defaults to 15% of the drive size rather than zero.</p>
-<h4>V2.3.0.0&nbsp;&nbsp;&nbsp; 1 Nov 2014</h4>
-<p>Minor revisions to the UI and documentation after testing for compatibility with the Windows 10 Technical Preview notification center facility.</p>
-<p>The configuration dialog is now much wider so you can read more of the text without scrolling.</p>
-<p>The Help button now invokes the HTML documentation since WinHelp isn't readily available on newer versions of Windows.</p>
-<h4>V2.2.1.1 7 - Aug 2008</h4>
-<p>Fix for unregistered operation under Windows Vista. If you allowed the 
-initial notification message box to time out, the monitor process would close.</p>
-<h4>V2.2.1.0 - 26 Nov 2006</h4>
-<p>Windows Vista compatible version.<br />
-Reworked to separate the monitoring and configuration functionality into<br />
-separate programs so that it works with Vista UAC.</p>
-<h4>V2.2.0.0 - 9 April 2006</h4>
-<p>Installation defaults to &quot;everyone&quot;.<br />
-Cosmetic changes to balloon tooltip texts.<br />
-Adopted the new registration number scheme used by our other products.<br />
-Fix some potential issues highlighted by Visual Studio&#39;s static code analysis &amp; 
-Application Verifier tools.</p>
-<h4>V2.1.0.1 - 19 April 2004</h4>
-<p>Fixes a cosmetic issue where the &quot;Disable operating system&#39;s built-in 
-low-disk space checking facility&quot; check box was not being set correctly under 
-Windows 98.</p>
-<h4>V2.1.0.0 - 1 Jan 2004</h4>
-<p>Added new recommendation category for &lt; 15% capacity figure to advise about 
-defragmenter limitation. Extended existing recommendation messages.<br />
-Added the &quot;Set to 15%&quot; button facility to the&nbsp; Modify dialog - again regarding the defrag facility.<br />
-Added &quot;Run Explorer&quot; command to the context menu to quickly open Explorer 
-expanded at the appropriate disk drive.<br />
-Changed nomenclature to match names used by Explorer.<br />
-Dynamically update the text of the mouse-over (non-balloon) tooltip to reflect 
-the current free space.<br />
-Changed the refresh timers to be less intrusive. Refresh less often (now starts 
-at 5 mins - was 2 mins, increasing to 2 hours - was 1 hour), display the balloon 
-tip for a slightly shorter period (10 secs).<br />
-Allow the subsequent non-display of the balloon tooltip in the current session.</p>
-<h4>V2.0.0.2 - 1 Nov 2002</h4>
-<p>Resolves a problem with unregistered usage that could result in Explorer 
-hanging if the startup notification message was allowed to timeout. The message 
-now displays as a topmost window.</p>
-<h4>V2.0 0 - 2 Oct 2002</h4>
-<p>Although this is V2, it&#39;s the first release of this major change from the 
-original Win98 specific SpaceCon program.</p>
+	<h4>V2.3.0.2&nbsp;&nbsp;&nbsp; 16 September 2018</h4>
+	<p>Fix for the Configure... context menu operation.</p>
+	<h4>V2.3.0.1&nbsp;&nbsp;&nbsp; 9 Feb 2018</h4>
+	<p>
+		Updated to change the start-up mechanism from using the start-up program
+		folder, to a registry entry under the (32-bit)
+		HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Run key.
+	</p>
+	<p>
+		The reason for this change is that the Windows 10 Task Manager Start-up tab
+		(and Windows Settings, Start-up) displayed the Space Patrol Monitor item as a
+		curious number rather than using the program name, which made it look
+		suspicious. Using the registry key to start up the monitor application shows the
+		correct information.
+	</p>
+	<p>
+		If you've made any changes to the configuration and haven't applied them,
+		you're now prompted if you try to close the dialog.
+	</p>
+	<p>
+		On a clean system with no saved settings, the default alarm at point now
+		defaults to 15% of the drive size rather than zero.
+	</p>
+	<h4>V2.3.0.0&nbsp;&nbsp;&nbsp; 1 Nov 2014</h4>
+	<p>Minor revisions to the UI and documentation after testing for compatibility with the Windows 10 Technical Preview notification center facility.</p>
+	<p>The configuration dialog is now much wider so you can read more of the text without scrolling.</p>
+	<p>The Help button now invokes the HTML documentation since WinHelp isn't readily available on newer versions of Windows.</p>
+	<h4>V2.2.1.1 7 - Aug 2008</h4>
+	<p>
+		Fix for unregistered operation under Windows Vista. If you allowed the
+		initial notification message box to time out, the monitor process would close.
+	</p>
+	<h4>V2.2.1.0 - 26 Nov 2006</h4>
+	<p>
+		Windows Vista compatible version.<br />
+		Reworked to separate the monitoring and configuration functionality into<br />
+		separate programs so that it works with Vista UAC.
+	</p>
+	<h4>V2.2.0.0 - 9 April 2006</h4>
+	<p>
+		Installation defaults to &quot;everyone&quot;.<br />
+		Cosmetic changes to balloon tooltip texts.<br />
+		Adopted the new registration number scheme used by our other products.<br />
+		Fix some potential issues highlighted by Visual Studio&#39;s static code analysis &amp;
+		Application Verifier tools.
+	</p>
+	<h4>V2.1.0.1 - 19 April 2004</h4>
+	<p>
+		Fixes a cosmetic issue where the &quot;Disable operating system&#39;s built-in
+		low-disk space checking facility&quot; check box was not being set correctly under
+		Windows 98.
+	</p>
+	<h4>V2.1.0.0 - 1 Jan 2004</h4>
+	<p>
+		Added new recommendation category for &lt; 15% capacity figure to advise about
+		defragmenter limitation. Extended existing recommendation messages.<br />
+		Added the &quot;Set to 15%&quot; button facility to the&nbsp; Modify dialog - again regarding the defrag facility.<br />
+		Added &quot;Run Explorer&quot; command to the context menu to quickly open Explorer
+		expanded at the appropriate disk drive.<br />
+		Changed nomenclature to match names used by Explorer.<br />
+		Dynamically update the text of the mouse-over (non-balloon) tooltip to reflect
+		the current free space.<br />
+		Changed the refresh timers to be less intrusive. Refresh less often (now starts
+		at 5 mins - was 2 mins, increasing to 2 hours - was 1 hour), display the balloon
+		tip for a slightly shorter period (10 secs).<br />
+		Allow the subsequent non-display of the balloon tooltip in the current session.
+	</p>
+	<h4>V2.0.0.2 - 1 Nov 2002</h4>
+	<p>
+		Resolves a problem with unregistered usage that could result in Explorer
+		hanging if the startup notification message was allowed to timeout. The message
+		now displays as a topmost window.
+	</p>
+	<h4>V2.0 0 - 2 Oct 2002</h4>
+	<p>
+		Although this is V2, it&#39;s the first release of this major change from the
+		original Win98 specific SpaceCon program.
+	</p>
 
 </body>
 
