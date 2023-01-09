@@ -157,8 +157,8 @@ IDI_ICON1               ICON                    "ICON1.ICO"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,4,0,0
- PRODUCTVERSION 2,4,0,0
+ FILEVERSION 2,4,1,0
+ PRODUCTVERSION 2,4,1,0
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -175,12 +175,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "JD Design"
             VALUE "FileDescription", "Space Patrol Monitor"
-            VALUE "FileVersion", "2.4.0.0"
+            VALUE "FileVersion", "2.4.1.0"
             VALUE "InternalName", "SPMonitor"
-            VALUE "LegalCopyright", "Copyright © JD Design 2006-2022"
+            VALUE "LegalCopyright", "Copyright © JD Design 2006-2023"
             VALUE "OriginalFilename", "SPMonitor.exe"
             VALUE "ProductName", "Space Patrol"
-            VALUE "ProductVersion", "2.4.0.0"
+            VALUE "ProductVersion", "2.4.1.0"
         END
     END
     BLOCK "VarFileInfo"
