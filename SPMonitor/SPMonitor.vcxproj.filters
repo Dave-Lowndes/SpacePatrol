@@ -45,6 +45,9 @@
     <ClCompile Include="..\SpaceCon\CommonToBoth.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\CommonCode\MiscFunctions.cpp">
+      <Filter>Source Files\LibraryCode</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -73,6 +76,9 @@
     </ClInclude>
     <ClInclude Include="..\SpaceCon\CommonToBoth.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CommonCode\MiscFunctions.h">
+      <Filter>Header Files\LibraryHeaders</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

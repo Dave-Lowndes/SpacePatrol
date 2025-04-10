@@ -60,6 +60,9 @@
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <VcpkgUseStatic>true</VcpkgUseStatic>
   </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
@@ -85,11 +88,7 @@
       <TargetMachine>MachineX86</TargetMachine>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
-    <PostBuildEvent>
-      <Command>REM Ensure the following environment variable is set!
-REM echo %SignToolPath%
-"%SignToolPath%\x86\signtool.exe"  sign /f "..\..\David%27s Code Signing Certificate.pfx"  /p $(CertPassword) /d "Space Patrol" $(TargetPath)</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -115,11 +114,7 @@ REM echo %SignToolPath%
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
-    <PostBuildEvent>
-      <Command>REM Ensure the following environment variable is set!
-REM echo %SignToolPath%
-"%SignToolPath%\x86\signtool.exe"  sign /f "..\..\David%27s Code Signing Certificate.pfx"  /p $(CertPassword) /d "Space Patrol" $(TargetPath)</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\CommonAboutBoxV3Reg\time_t_funcs.cpp">
@@ -131,6 +126,10 @@ REM echo %SignToolPath%
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\..\CommonCode\CheckForUpdate.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\CommonCode\MiscFunctions.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -153,6 +152,7 @@ REM echo %SignToolPath%
     <ClInclude Include="..\..\CommonAboutBoxV3Reg\time_t_funcs.h" />
     <ClInclude Include="..\..\CommonAboutBoxV3Reg\VerUtil.h" />
     <ClInclude Include="..\..\CommonCode\CheckForUpdate.h" />
+    <ClInclude Include="..\..\CommonCode\MiscFunctions.h" />
     <ClInclude Include="..\..\RegGen\RegDecV3.h" />
     <ClInclude Include="..\..\RegGen\RegKeyRegistryFuncs.h" />
     <ClInclude Include="..\SpaceCon\CommonToBoth.h" />
