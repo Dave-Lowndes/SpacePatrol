@@ -1,4 +1,5 @@
 #pragma once
+#include <span>
 
 #pragma pack( push )
 #pragma pack( 1 )
@@ -33,12 +34,12 @@ extern void InitEvents();
 inline constexpr const TCHAR szRegistryKey[] = _T( "Software\\JD Design\\SpaceCon" );
 inline constexpr LPCTSTR SETTINGS = _T( "DriveSettings" );
 
-inline void LoadStringChecked( HINSTANCE hInstance, UINT uID, LPTSTR lpBuffer, int cchBufferMax )
+inline void LoadStringChecked( HINSTANCE hInstance, UINT uID, std::span<TCHAR> Buffer )
 {
 #if _DEBUG
 const int NumCharsLoaded =
 #endif
-	LoadString( hInstance, uID, lpBuffer, cchBufferMax );	//-V530
+	LoadString( hInstance, uID, Buffer.data(), Buffer.size() );	//-V530
 	// Resource string must be present
 	_ASSERT( NumCharsLoaded != 0 );
 }

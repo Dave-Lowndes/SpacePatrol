@@ -125,12 +125,12 @@ static void HandleMonitorTimer( HWND hWnd )
 						CW2CT pSpaceRemainingText( szSpaceRemainingW );
 
 						TCHAR szInfoFmt[256];
-						LoadStringChecked( g_hResInst, IDS_TT_INFO_FMT, szInfoFmt, std::size( szInfoFmt ) );
+						LoadStringChecked( g_hResInst, IDS_TT_INFO_FMT, szInfoFmt );
 
 						/*_T("Low Disk Space Notification\nDrive %c: %s")*/
 						_stprintf( nid.szInfo, szInfoFmt, _T( 'A' ) + dNum, static_cast<LPCTSTR>(pSpaceRemainingText) );	//-V111
 
-						LoadStringChecked( g_hResInst, IDS_LDS_CAPTION, nid.szInfoTitle, std::size( nid.szInfoTitle ) );
+						LoadStringChecked( g_hResInst, IDS_LDS_CAPTION, nid.szInfoTitle );
 
 						nid.uFlags = NIF_INFO;
 						nid.uTimeout = TOOLTIP_DISPLAY_TIME;
@@ -171,7 +171,7 @@ static void HandleMonitorTimer( HWND hWnd )
 							nid.hIcon = (HICON) LoadImage( g_hInstance, MAKEINTRESOURCE( IDI_SMALL ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR );
 
 							TCHAR szTipFmt[128];
-							LoadStringChecked( g_hResInst, IDS_TT_TIP_FMT, szTipFmt, std::size( szTipFmt ) );
+							LoadStringChecked( g_hResInst, IDS_TT_TIP_FMT, szTipFmt );
 
 							// "JD Design Space Control: Low disk space on drive %c: %s"
 							_stprintf( nid.szTip, szTipFmt, _T( 'A' ) + dNum, static_cast<LPCTSTR>(pSpaceRemainingText) );	//-V111
@@ -734,7 +734,7 @@ static UINT g_TaskBarCreated = 0;
 						CW2CT pSpaceRemainingText( szSpaceRemainingW );
 
 						TCHAR szTipFmt[ 128 ];
-						LoadStringChecked( g_hResInst, IDS_TT_TIP_FMT, szTipFmt, std::size( szTipFmt ) );
+						LoadStringChecked( g_hResInst, IDS_TT_TIP_FMT, szTipFmt );
 
 						/*_T("JD Design Space Control: Low disk space on drive %c: %s")*/
 						_stprintf( nid.szTip, szTipFmt, _T( 'A' ) + DriveNum, static_cast<LPCTSTR>(pSpaceRemainingText) );	//-V111
@@ -806,7 +806,7 @@ int WINAPI wWinMain(
 	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 
 	// Initialize global strings
-	LoadStringChecked( hInstance, IDS_APP_TITLE, szAppName, std::size( szAppName ) );
+	LoadStringChecked( hInstance, IDS_APP_TITLE, szAppName );
 
 	MyRegisterClass(hInstance);
 

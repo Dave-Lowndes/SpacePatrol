@@ -941,7 +941,7 @@ int WINAPI wWinMain(
 	HACCEL hAccelTable;
 
 	// Initialize global strings
-	LoadStringChecked( hInstance, IDS_APP_TITLE, szAppName, std::size( szAppName ) );
+	LoadStringChecked( hInstance, IDS_APP_TITLE, szAppName );
 
 	MyRegisterClass(hInstance);
 
