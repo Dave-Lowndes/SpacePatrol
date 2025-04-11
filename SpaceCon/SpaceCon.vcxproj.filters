@@ -67,7 +67,6 @@
     </None>
     <None Include="..\ReadMe\ConfigDlg.png" />
     <None Include="..\ReadMe\Notification on Win8.1.png" />
-    <None Include="ReadMe.txt" />
     <None Include="..\ReadMe\revision_history.htm" />
     <None Include="..\ReadMe\ThresholdDlg.png" />
   </ItemGroup>

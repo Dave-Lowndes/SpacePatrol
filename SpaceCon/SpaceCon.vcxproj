@@ -99,7 +99,7 @@
     </Link>
     <PostBuildEvent />
     <Manifest>
-      <EnableDPIAwareness>true</EnableDPIAwareness>
+      <EnableDPIAwareness>PerMonitorHighDPIAware</EnableDPIAwareness>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -132,7 +132,7 @@
     </Link>
     <PostBuildEvent />
     <Manifest>
-      <EnableDPIAwareness>true</EnableDPIAwareness>
+      <EnableDPIAwareness>PerMonitorHighDPIAware</EnableDPIAwareness>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -212,7 +212,6 @@ type "%(Filename).log"
     <None Include="..\ReadMe\Notification on Win8.1.png">
       <DeploymentContent>true</DeploymentContent>
     </None>
-    <None Include="ReadMe.txt" />
     <None Include="..\ReadMe\revision_history.htm">
       <DeploymentContent>true</DeploymentContent>
     </None>
