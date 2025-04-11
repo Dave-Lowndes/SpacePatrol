@@ -233,15 +233,15 @@ static void HandleMonitorTimer( HWND hWnd )
 							if ( Shell_NotifyIcon( NIM_DELETE, &nid ) )
 							{
 								/* OK */
+
+								/* Indicate that we're not displaying the icon for this drive */
+								g_DriveIconDisplayed &= ~(1 << dNum);
 							}
 							else
 							{
 								/* Failed to remove icon */
 								MessageBeep( MB_OK );
 							}
-
-							/* Indicate that we're not re displaying the icon for this drive */
-							g_DriveIconDisplayed &= ~(1 << dNum );
 						}
 					}
 				}
@@ -509,7 +509,6 @@ static UINT g_TaskBarCreated = 0;
 	case WM_COMMAND:
 		{
 			const int wmId = LOWORD( wParam );
-//			const int wmEvent = HIWORD( wParam );
 			// Parse the menu selections:
 			switch ( wmId )
 			{
