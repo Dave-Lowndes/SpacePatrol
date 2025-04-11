@@ -44,24 +44,24 @@ static LPCTSTR szWindowClass = _T("JDDESIGN_SPACECON");
 
 static optional<CMyRegData> g_RegData;
 
-#define AMEGABYTE	(1024*1024)
+constexpr auto AMEGABYTE{ 1024 * 1024 };
 
-typedef struct tagColStruct
+struct COLSTRUCT
 {
 	int StringID;		// The resource string ID for the list caption
 	BYTE WidthInChars;	// Default width - value is read from resource if it's there
 	int Align;			// Column alignment fmt
-} COLSTRUCT;
+};
 
 /* This structure contains the column header title texts, and the default CHARACTER widths */
 static COLSTRUCT g_columnFmts[] =
 {
-	IDS_DRIVE, 15, LVCFMT_LEFT,
-	IDS_CAPACITY, 9, LVCFMT_RIGHT,
-	IDS_FREE_SPACE, 10, LVCFMT_RIGHT,
+	{IDS_DRIVE, 15, LVCFMT_LEFT},
+	{IDS_CAPACITY, 9, LVCFMT_RIGHT},
+	{IDS_FREE_SPACE, 10, LVCFMT_RIGHT},
 // NT Specific	_T("User Free"), 9,
-	IDS_ALARM_AT, 9, LVCFMT_RIGHT,
-	IDS_RECOMMEND, 20, LVCFMT_LEFT
+	{IDS_ALARM_AT, 9, LVCFMT_RIGHT},
+	{IDS_RECOMMEND, 20, LVCFMT_LEFT}
 //	_T("Type"), 7
 };
 
@@ -251,7 +251,7 @@ static void UpdateDriveInformation( HWND hList, int Item, WORD DriveNum, LPCTSTR
 	}
 }
 
-INT_PTR CALLBACK ModifyDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK ModifyDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	static CModDlgParams * pModParams;
 
@@ -345,7 +345,7 @@ static int MessageBoxForSystemError( HWND hDlg, DWORD ErrorValue, LPCTSTR pAppNa
 	return rv;
 }
 
-INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	static bool g_bModified = false;
 
@@ -775,7 +775,7 @@ INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 //  FUNCTION: WndProc(HWND, unsigned, WORD, LONG)
 //
 //  PURPOSE:  Processes messages for the main window.
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) 
 	{

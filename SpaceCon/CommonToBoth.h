@@ -20,17 +20,18 @@ public:
 extern CDriveCfg g_DriveConfig[26];
 
 extern HANDLE g_hEvents[4];
-#define EVT_REFRESH			0
-#define EVT_EXITTHREAD		1
-#define EVT_EXITINSTANCE	2
-#define EVT_RESTARTMONITORS	3
+// The IDs of the events in g_hEvents
+inline constexpr auto EVT_REFRESH{ 0 };
+inline constexpr auto EVT_EXITTHREAD{ 1 };
+inline constexpr auto EVT_EXITINSTANCE{ 2 };
+inline constexpr auto EVT_RESTARTMONITORS{ 3 };
 
 extern void LoadGlobalSettingsFromReg() noexcept;
 extern void InitEvents();
 
 /* The following are the names of the registry keys and values */
-constexpr const TCHAR szRegistryKey[] = _T( "Software\\JD Design\\SpaceCon" );
-constexpr LPCTSTR SETTINGS = _T( "DriveSettings" );
+inline constexpr const TCHAR szRegistryKey[] = _T( "Software\\JD Design\\SpaceCon" );
+inline constexpr LPCTSTR SETTINGS = _T( "DriveSettings" );
 
 inline void LoadStringChecked( HINSTANCE hInstance, UINT uID, LPTSTR lpBuffer, int cchBufferMax )
 {

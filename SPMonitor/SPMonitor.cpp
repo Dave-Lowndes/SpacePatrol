@@ -50,15 +50,15 @@ static DWORD g_DriveIconDisplayed = 0;
 // Similarly, this records which drives the user doesn't want to be reminded of
 static DWORD g_bNoRefreshTip;
 
-#define AMEGABYTE	(1024*1024)
+constexpr auto AMEGABYTE{ 1024 * 1024 };
 
 // This is the time that we (should) keep checking the space
-#define POLL_TIME		(45*1000)
+constexpr auto POLL_TIME{ 45 * 1000 };
 
 // This is the period after we've displayed (or refreshed) an icon when we want to re-display the tooltip
-#define INITIAL_REDISPLAY_TIME	(5*60*1000)
-#define MAX_REDISPLAY_TIME (2*60*60*1000)
-#define TOOLTIP_DISPLAY_TIME	(10*1000)
+constexpr auto INITIAL_REDISPLAY_TIME{ 5 * 60 * 1000 };
+constexpr auto MAX_REDISPLAY_TIME{ 2 * 60 * 60 * 1000 };
+constexpr auto TOOLTIP_DISPLAY_TIME{ 10 * 1000 };
 
 static int ResMessageBox( HWND hWnd, int ResId, LPCTSTR pCaption, const int Flags )
 {
@@ -371,7 +371,7 @@ static unsigned int __stdcall MonitorChangesThread( void * param ) noexcept
 	return 0;
 }
 
-BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) noexcept
+static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) noexcept
 {
 	g_hResInst = g_hInstance = hInstance; // Store instance handle in our global variable
 
@@ -460,7 +460,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) noexcept
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
 //
 //  PURPOSE:  Processes messages for the main window.
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 // This message number is sent when the taskbar is (re)created. We must assume the icons have been lost
 static UINT g_TaskBarCreated = 0;
@@ -784,7 +784,7 @@ static UINT g_TaskBarCreated = 0;
 //  FUNCTION: MyRegisterClass()
 //
 //  PURPOSE: Registers the window class.
-ATOM MyRegisterClass(HINSTANCE hInstance) noexcept
+static ATOM MyRegisterClass(HINSTANCE hInstance) noexcept
 {
 	WNDCLASSEX wcex;
 
