@@ -569,15 +569,6 @@ static UINT g_TaskBarCreated = 0;
 		}
 		break;
 
-	case WM_PAINT:
-		{
-			PAINTSTRUCT ps;
-			/*HDC hdc = */BeginPaint( hWnd, &ps );
-			// TODO: Add any drawing code here...
-			EndPaint( hWnd, &ps );
-		}
-		break;
-
 	case WM_DESTROY:
 		/* Remove the icons for any items we may be showing */
 		{

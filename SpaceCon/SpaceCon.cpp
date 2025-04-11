@@ -95,13 +95,13 @@ public:
 	}
 };
 
-static void UpdateDriveInformation( HWND hList, int Item, WORD DriveNum, LPCTSTR pDrive, bool bUpdate )
+static void UpdateDriveInformation( HWND hList, int Item, WORD DriveNum, LPCTSTR pDrive )
 {
 	CModDlgParams * pItemData;
 	LVITEM lvi;
 
 	/* Only insert the item if it's the initialisation time, refreshes overwrite */
-	if ( !bUpdate )
+	if ( pDrive != nullptr )
 	{
 		/* Allocate a new per-item data */
 		pItemData = new CModDlgParams();
@@ -387,9 +387,6 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 							{
 								g_columnFmts[ColNo].WidthInChars = pCols[ColNo];
 							}
-
-							UnlockResource( hCols );
-							FreeResource( hCols );
 						}
 					}
 				}
@@ -470,7 +467,7 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 							/* Check hard disks and removable ones like ZIP drives (unfortunately, this includes floppys too) */
 							if ( ( DRIVE_FIXED == drivetype ) /*|| ( DRIVE_REMOVABLE == drivetype )*/ )
 							{
-								UpdateDriveInformation( hList, Item, dNum, pDrive, false );
+								UpdateDriveInformation( hList, Item, dNum, pDrive );
 
 								Item++;
 							}
@@ -607,7 +604,7 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 						g_DriveConfig[ mp->DriveNum ].AlarmAt = mp->AlarmAtMB;
 
 						/* Update list display */
-						UpdateDriveInformation( hList, SelItem, 0, NULL, true );
+						UpdateDriveInformation( hList, SelItem, 0, nullptr );
 
 						/* Set the modified flag */
 						g_bModified = true;
@@ -781,9 +778,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 	{
 	case WM_COMMAND:
 		{
-			int wmId, wmEvent;
-			wmId = LOWORD( wParam );
-			wmEvent = HIWORD( wParam );
+			const int wmId = LOWORD( wParam );
 			static bool bInHere = false;
 			// Parse the menu selections:
 			switch ( wmId )
@@ -841,15 +836,6 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			default:
 				return DefWindowProc( hWnd, message, wParam, lParam );
 			}
-		}
-		break;
-
-	case WM_PAINT:
-		{
-			PAINTSTRUCT ps;
-			HDC hdc;
-			hdc = BeginPaint(hWnd, &ps);
-			EndPaint(hWnd, &ps);
 		}
 		break;
 
