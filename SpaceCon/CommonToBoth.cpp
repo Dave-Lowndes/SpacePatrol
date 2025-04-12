@@ -30,7 +30,7 @@ void LoadGlobalSettingsFromReg() noexcept
 		}
 		else
 		{
-//			MessageBox( NULL, _T("Failed to read the values in the registry"), szAppName, MB_OK | MB_ICONINFORMATION );
+//			MessageBox( NULL, _T("Failed to read the values in the registry"), g_AppName, MB_OK | MB_ICONINFORMATION );
 		}
 	}
 	else

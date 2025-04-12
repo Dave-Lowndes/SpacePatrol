@@ -26,7 +26,10 @@ using std::filesystem::path;
 // Global Variables:
 static HINSTANCE g_hInstance;			// current instance
 static HINSTANCE g_hResInst;			// Resource DLL instance
-TCHAR szAppName[100];					// The title bar text
+static CStringW g_AppName;				// The title bar text
+static CString g_TipFmtString;			// Tooltip format string
+static CString g_TipInfoFmtString;		// Tooltip Info format string
+
 static LPCTSTR szWindowClass = _T("JD_Design_SPMONITOR_wndClass");	// the main window class name
 static BOOL g_bHasCleanmgr;				// The disk cleanup application is available
 
@@ -66,7 +69,182 @@ static int ResMessageBox( HWND hWnd, int ResId, LPCTSTR pCaption, const int Flag
 	return(MessageBox( hWnd, sMsg, pCaption, Flags ));
 }
 
-/* This function handles the main repeating timer to monitor all drives */
+static void LoadResourceStringSpan( HINSTANCE hInstance, UINT uID, std::span<TCHAR> Buffer )
+{
+#if _DEBUG
+	const int NumCharsLoaded =
+#endif
+		LoadString( hInstance, uID, Buffer.data(), Buffer.size() );	//-V530
+	// Resource string must be present
+	_ASSERT( NumCharsLoaded != 0 );
+}
+
+/// <summary>
+/// Handles the notification and display of low disk space warnings for a specific drive.
+/// </summary>
+/// <param name="UserFree">The amount of free space available to the user on the drive, in bytes.</param>
+/// <param name="nid">A reference to a NOTIFYICONDATA structure used to configure and display the notification icon and tooltip.</param>
+/// <param name="Total">The total storage capacity of the drive, in bytes.</param>
+static void HandleDiskSpaceBelowThreshold( ULONGLONG UserFree, NOTIFYICONDATA& nid, ULONGLONG Total )
+{
+	const auto dNum{ nid.uID };
+
+	/* If the redisplay period were fixed, I'd only need to save the next
+	* display time, but as I've chosen to increase the period progressively,
+	* I need to store both the current period for each drive and the time
+	* it was last displayed.
+	*/
+	struct DRIVE_NI_TIME
+	{
+		/* The time when a drive icon was last updated,
+		* so that I can re-display the balloon tooltip.
+		*/
+		DWORD LastDisplayedTime;
+		/* The current period that the balloon tooltip redisplays */
+		DWORD RedisplayPeriod;
+	};
+
+	static DRIVE_NI_TIME DriveNI[26];
+
+	/* Set up the common (initial & refresh) aspects of the tooltip display */
+	wchar_t szSpaceRemainingW[20];
+	StrFormatByteSizeW( UserFree, szSpaceRemainingW, std::size( szSpaceRemainingW ) );
+
+	/*_T("Low Disk Space Notification\nDrive %c: %s")*/
+	_stprintf( nid.szInfo, g_TipInfoFmtString, _T( 'A' ) + dNum, static_cast<LPCTSTR>(szSpaceRemainingW) );	//-V111
+
+	LoadResourceStringSpan( g_hResInst, IDS_LDS_CAPTION, nid.szInfoTitle );
+
+	nid.uFlags = NIF_INFO;
+	nid.uTimeout = TOOLTIP_DISPLAY_TIME;
+
+	// Display an Information icon
+	// Different icons for different degrees of low disk space
+	// < 1MB is critical
+	nid.dwInfoFlags = (UserFree < 1ULL * AMEGABYTE) ?
+						NIIF_ERROR :
+						// Have we got more than 15% (space to defrag) ?
+						(UserFree > (15 * Total / 100)) ?
+							NIIF_INFO :
+							/* Insufficient to defrag - so slightly higher warning */
+							NIIF_WARNING;
+#pragma warning( push )
+#pragma warning( disable:28159 )
+	const auto tcNow = GetTickCount();
+#pragma warning( push )
+
+	/* Are we already displaying this drive's icon? */
+	if ( !(g_DriveIconDisplayed & (1 << dNum)) )
+	{
+		/* Display the notification icon */
+		nid.uFlags |= NIF_ICON | NIF_TIP | NIF_MESSAGE;
+
+		nid.uCallbackMessage = UWM_TIPNOTIFY;
+
+		nid.hIcon = (HICON) LoadImage( g_hInstance, MAKEINTRESOURCE( IDI_SMALL ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR );
+
+		// "JD Design Space Patrol: Low disk space on drive %c: %s"
+		_stprintf( nid.szTip, g_TipFmtString, _T( 'A' ) + dNum, static_cast<LPCTSTR>(szSpaceRemainingW) );	//-V111
+
+		if ( Shell_NotifyIcon( NIM_ADD, &nid ) )
+		{
+			/* added OK */
+			/* Record when this icon appears so we can refresh the balloon tooltip after a longer delay */
+			DriveNI[dNum].LastDisplayedTime = tcNow;
+
+			/* Indicate that we're displaying the icon for this drive */
+			g_DriveIconDisplayed |= (1 << dNum);
+
+			/* Set the initial redisplay period */
+			DriveNI[dNum].RedisplayPeriod = INITIAL_REDISPLAY_TIME;
+
+			/* We initially want to remind the user by refreshing this tip */
+			g_bNoRefreshTip &= ~(1 << dNum);
+		}
+		else
+		{
+			/* Failed to add icon */
+			MessageBeep( MB_OK );
+		}
+	}
+	else
+	{
+		/* Already displaying, has the time period expired for a refresh? */
+		if ( tcNow - DriveNI[dNum].LastDisplayedTime >= DriveNI[dNum].RedisplayPeriod )
+		{
+			/* It's expired, refresh it unless the user has prevented the updating for this drive. */
+			if ( !(g_bNoRefreshTip & (1 << dNum)) )
+			{
+				if ( Shell_NotifyIcon( NIM_MODIFY, &nid ) )
+				{
+					/* added OK */
+					/* Record when this icon appears so we can refresh the balloon tooltip after a longer delay */
+					DriveNI[dNum].LastDisplayedTime = tcNow;
+
+					/* Increase the period so that each time takes longer */
+					/* But don't wait too long */
+					DriveNI[dNum].RedisplayPeriod = min( 2 * DriveNI[dNum].RedisplayPeriod, MAX_REDISPLAY_TIME );
+				}
+				else
+				{
+					/* Failed to add icon */
+					MessageBeep( MB_OK );
+				}
+			}
+		}
+	}
+}
+
+/// <summary>
+/// Monitors disk space for a specified drive and displays notifications when free space falls below a configured threshold.
+/// </summary>
+/// <param name="pDrive">A pointer to a string specifying the drive to monitor (e.g., 'C:\').</param>
+/// <param name="nid">A reference to a partially pre-configured NOTIFYICONDATA structure used to configure and display the notification icon and tooltip.</param>
+static void MonitorDiskSpace( LPTSTR pDrive, NOTIFYICONDATA& nid )
+{
+	ULARGE_INTEGER UserFree, Total, TotFree;
+	if ( GetDiskFreeSpaceEx( pDrive, &UserFree, &Total, &TotFree ) )
+	{
+		const auto dNum{ nid.uID };
+
+		/* Below the threshold? (and we want to alert on this drive) */
+		if ( (UserFree.QuadPart < g_DriveConfig[dNum].AlarmAt) && g_DriveConfig[dNum].bCheckMe )
+		{
+			HandleDiskSpaceBelowThreshold( UserFree.QuadPart, nid, Total.QuadPart );
+		}
+		else
+		{
+			/* Are we displaying this drive's icon? */
+			if ( (g_DriveIconDisplayed & (1 << dNum)) )
+			{
+				/* Remove it */
+				if ( Shell_NotifyIcon( NIM_DELETE, &nid ) )
+				{
+					/* OK */
+
+					/* Indicate that we're not displaying the icon for this drive */
+					g_DriveIconDisplayed &= ~(1 << dNum);
+				}
+				else
+				{
+					/* Failed to remove icon */
+					MessageBeep( MB_OK );
+				}
+			}
+		}
+	}
+	else
+	{
+		/* Can't get the values! */
+		_ASSERT( false );
+		MessageBeep( MB_OK );
+	}
+}
+
+/// <summary>
+/// Handles the main timer event to monitor all disk drives and their space usage.
+/// </summary>
+/// <param name="hWnd">A handle to the window that will receive notifications about disk space monitoring.</param>
 static void HandleMonitorTimer( HWND hWnd )
 {
 	const auto ReqdBufferSize = GetLogicalDriveStrings( 0, nullptr );
@@ -84,7 +262,9 @@ static void HandleMonitorTimer( HWND hWnd )
 	LPTSTR pDrive;
 
 	// Loop for valid disk drives
-	for ( dNum = 0, pDrive = szDriveStrings.data(); (dNum < std::size(g_DriveConfig)) && (pDrive[0] != _T('\0')); ++dNum )
+	for (	dNum = 0, pDrive = szDriveStrings.data();
+			(dNum < std::size(g_DriveConfig)) && (pDrive[0] != _T('\0'));
+			++dNum )
 	{
 		/* Does this drive exist? */
 		if ( dwDrives & (1 << dNum ) )
@@ -94,161 +274,9 @@ static void HandleMonitorTimer( HWND hWnd )
 			/* Check local hard disks only */
 			if ( DRIVE_FIXED == drivetype )
 			{
-				ULARGE_INTEGER UserFree, Total, TotFree;
-				if ( GetDiskFreeSpaceEx( pDrive, &UserFree, &Total, &TotFree ) )
-				{
-					nid.uID = dNum;
+				nid.uID = dNum;
 
-					/* Below the threshold? (and we want to alert on this drive) */
-					if ( ( UserFree.QuadPart < g_DriveConfig[dNum].AlarmAt ) && g_DriveConfig[ dNum  ].bCheckMe )
-					{
-						/* If the redisplay period were fixed, I'd only need to save the next
-						 * display time, but as I've chosen to increase the period progressively,
-						 * I need to store both the current period for each drive and the time
-						 * it was last displayed.
-						 */
-						typedef struct tagDRIVE_NI_TIME
-						{
-							/* The time when a drive icon was last updated,
-							 * so that I can re-display the balloon tooltip.
-							 */
-							DWORD LastDisplayedTime;
-							/* The current period that the balloon tooltip redisplays */
-							DWORD RedisplayPeriod;
-						} DRIVE_NI_TIME;
-
-						static DRIVE_NI_TIME DriveNI[26];
-
-						/* Set up the common (initial & refresh) aspects of the tooltip display */
-						wchar_t szSpaceRemainingW[20];
-						StrFormatByteSizeW( UserFree.QuadPart, szSpaceRemainingW, std::size( szSpaceRemainingW ) );
-						CW2CT pSpaceRemainingText( szSpaceRemainingW );
-
-						TCHAR szInfoFmt[256];
-						LoadStringChecked( g_hResInst, IDS_TT_INFO_FMT, szInfoFmt );
-
-						/*_T("Low Disk Space Notification\nDrive %c: %s")*/
-						_stprintf( nid.szInfo, szInfoFmt, _T( 'A' ) + dNum, static_cast<LPCTSTR>(pSpaceRemainingText) );	//-V111
-
-						LoadStringChecked( g_hResInst, IDS_LDS_CAPTION, nid.szInfoTitle );
-
-						nid.uFlags = NIF_INFO;
-						nid.uTimeout = TOOLTIP_DISPLAY_TIME;
-
-						// Display an Information icon
-						// Different icons for different degrees of low disk space
-						// < 1MB is critical
-						if ( UserFree.QuadPart < 1ULL * AMEGABYTE )
-						{
-							nid.dwInfoFlags = NIIF_ERROR;
-						}
-						else
-						{
-							// Have we got more than 15% (space to defrag) ?
-							if ( UserFree.QuadPart > ( 15 * Total.QuadPart / 100 ) )
-							{
-								nid.dwInfoFlags = NIIF_INFO;
-							}
-							else
-							{
-								/* Insufficient to defrag - so slightly higher warning */
-								nid.dwInfoFlags = NIIF_WARNING;
-							}
-						}
-#pragma warning( push )
-#pragma warning( disable:28159 )
-						const auto tcNow = GetTickCount();
-#pragma warning( push )
-
-						/* Are we already displaying this drive's icon? */
-						if ( !( g_DriveIconDisplayed & (1 << dNum ) ) )
-						{
-							/* Display the notification icon */
-							nid.uFlags |= NIF_ICON | NIF_TIP | NIF_MESSAGE;
-
-							nid.uCallbackMessage = UWM_TIPNOTIFY;
-
-							nid.hIcon = (HICON) LoadImage( g_hInstance, MAKEINTRESOURCE( IDI_SMALL ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR );
-
-							TCHAR szTipFmt[128];
-							LoadStringChecked( g_hResInst, IDS_TT_TIP_FMT, szTipFmt );
-
-							// "JD Design Space Control: Low disk space on drive %c: %s"
-							_stprintf( nid.szTip, szTipFmt, _T( 'A' ) + dNum, static_cast<LPCTSTR>(pSpaceRemainingText) );	//-V111
-
-							if ( Shell_NotifyIcon( NIM_ADD, &nid ) )
-							{
-								/* added OK */
-								/* Record when this icon appears so we can refresh the balloon tooltip after a longer delay */
-								DriveNI[dNum].LastDisplayedTime = tcNow;
-
-								/* Indicate that we're displaying the icon for this drive */
-								g_DriveIconDisplayed |= (1 << dNum );
-
-								/* Set the initial redisplay period */
-								DriveNI[dNum].RedisplayPeriod = INITIAL_REDISPLAY_TIME;
-
-								/* We initially want to remind the user by refreshing this tip */
-								g_bNoRefreshTip &= ~(1 << dNum);
-							}
-							else
-							{
-								/* Failed to add icon */
-								MessageBeep( MB_OK );
-							}
-						}
-						else
-						{
-							/* Already displaying, has the time period expired for a refresh? */
-							if ( tcNow - DriveNI[dNum].LastDisplayedTime >= DriveNI[dNum].RedisplayPeriod )
-							{
-								/* It's expired, refresh it unless the user has prevented the updating for this drive. */
-								if ( !(g_bNoRefreshTip & (1 << dNum)) )
-								{
-									if ( Shell_NotifyIcon( NIM_MODIFY, &nid ) )
-									{
-										/* added OK */
-										/* Record when this icon appears so we can refresh the balloon tooltip after a longer delay */
-										DriveNI[dNum].LastDisplayedTime = tcNow;
-
-										/* Increase the period so that each time takes longer */
-										/* But don't wait too long */
-										DriveNI[dNum].RedisplayPeriod = min( 2*DriveNI[dNum].RedisplayPeriod, MAX_REDISPLAY_TIME );
-									}
-									else
-									{
-										/* Failed to add icon */
-										MessageBeep( MB_OK );
-									}
-								}
-							}
-						}
-					}
-					else
-					{
-						/* Are we displaying this drive's icon? */
-						if ( ( g_DriveIconDisplayed & (1 << dNum ) ) )
-						{
-							/* Remove it */
-							if ( Shell_NotifyIcon( NIM_DELETE, &nid ) )
-							{
-								/* OK */
-
-								/* Indicate that we're not displaying the icon for this drive */
-								g_DriveIconDisplayed &= ~(1 << dNum);
-							}
-							else
-							{
-								/* Failed to remove icon */
-								MessageBeep( MB_OK );
-							}
-						}
-					}
-				}
-				else
-				{
-					/* Can't get the values! */
-				}
+				MonitorDiskSpace( pDrive, nid );
 			}
 
 			/* Next drive letter */
@@ -374,6 +402,7 @@ static unsigned int __stdcall MonitorChangesThread( void * param ) noexcept
 static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) noexcept
 {
 	g_hResInst = g_hInstance = hInstance; // Store instance handle in our global variable
+// Not necessary as no separate resource DLL is used	_AtlBaseModule.SetResourceInstance( g_hResInst );
 
 	g_RegData = GetMyRegistrationFromTheRegistry( szRegistryKey );
 
@@ -410,7 +439,7 @@ static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) noexcept
 
 			case 'N':	// No nag - called during installation
 #ifdef _DEBUG
-				MessageBox( GetForegroundWindow(), _T("No Nag"), szAppName, MB_OK );
+				MessageBox( GetForegroundWindow(), _T("No Nag"), g_AppName, MB_OK );
 #endif
 				bNoNag = true;
 				break;
@@ -435,7 +464,7 @@ static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) noexcept
 	/* Load the settings from the registry */
 	LoadGlobalSettingsFromReg();
 
-	HWND hWnd = CreateWindow(szWindowClass, szAppName, WS_OVERLAPPEDWINDOW,
+	HWND hWnd = CreateWindow(szWindowClass, g_AppName, WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, CW_USEDEFAULT, 350, 100, NULL, NULL, hInstance, nullptr );
 
 	if (!hWnd)
@@ -731,13 +760,9 @@ static UINT g_TaskBarCreated = 0;
 					{
 						wchar_t szSpaceRemainingW[20];
 						StrFormatByteSizeW( UserFree.QuadPart, szSpaceRemainingW, std::size( szSpaceRemainingW ) );
-						CW2CT pSpaceRemainingText( szSpaceRemainingW );
 
-						TCHAR szTipFmt[ 128 ];
-						LoadStringChecked( g_hResInst, IDS_TT_TIP_FMT, szTipFmt );
-
-						/*_T("JD Design Space Control: Low disk space on drive %c: %s")*/
-						_stprintf( nid.szTip, szTipFmt, _T( 'A' ) + DriveNum, static_cast<LPCTSTR>(pSpaceRemainingText) );	//-V111
+						/*_T("JD Design Space Patrol: Low disk space on drive %c: %s")*/
+						_stprintf( nid.szTip, g_TipFmtString, _T( 'A' ) + DriveNum, static_cast<LPCTSTR>(szSpaceRemainingW) );	//-V111
 
 						nid.uFlags = NIF_TIP;
 						nid.uTimeout = TOOLTIP_DISPLAY_TIME;
@@ -751,7 +776,7 @@ static UINT g_TaskBarCreated = 0;
 
 			case NIN_BALLOONUSERCLICK:
 				/* User has clicked the balloon tooltip */
-				if ( IDYES == ResMessageBox( hWnd, IDS_NO_LONGER_REMIND, szAppName, MB_ICONQUESTION | MB_YESNO ) )
+				if ( IDYES == ResMessageBox( hWnd, IDS_NO_LONGER_REMIND, g_AppName, MB_ICONQUESTION | MB_YESNO ) )
 				{
 					g_bNoRefreshTip |= 1 << DriveNum;
 				}
@@ -759,7 +784,7 @@ static UINT g_TaskBarCreated = 0;
 
 			// Not much use, since this happens for both a full timeout, and if the user clicks on the X button in the tooltip
 			//case NIN_BALLOONTIMEOUT:
-			//	MessageBox( hWnd, "NIN_BALLOONTIMEOUT", szAppName, MB_OK );
+			//	MessageBox( hWnd, "NIN_BALLOONTIMEOUT", g_AppName, MB_OK );
 			//	break;
 			}
 		}
@@ -806,7 +831,9 @@ int WINAPI wWinMain(
 	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 
 	// Initialize global strings
-	LoadStringChecked( hInstance, IDS_APP_TITLE, szAppName );
+	std::ignore = g_AppName.LoadString( hInstance, IDS_APP_TITLE );
+	std::ignore = g_TipFmtString.LoadString( hInstance, IDS_TT_TIP_FMT );
+	std::ignore = g_TipInfoFmtString.LoadString( hInstance, IDS_TT_INFO_FMT );
 
 	MyRegisterClass(hInstance);
 

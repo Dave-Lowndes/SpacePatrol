@@ -35,7 +35,7 @@ using std::filesystem::path;
 // Global Variables:
 static HINSTANCE g_hInstance;			// current instance
 static HINSTANCE g_hResInst;			// Resource DLL instance
-static TCHAR szAppName[100];			// The title bar text
+static CStringW szAppName;			// The title bar text
 static LPCTSTR szWindowClass = _T("JDDESIGN_SPACECON");
 
 /* These are the registry key/value for the XP facility */
@@ -169,85 +169,83 @@ static void UpdateDriveInformation( HWND hList, int Item, WORD DriveNum, LPCTSTR
 	}
 	
 
+	// Detect the uninitialised state - AlarmAt == 0, and replace with something more reasonable
+	if ( g_DriveConfig[pItemData->DriveNum].AlarmAt == 0 )
 	{
-		// Detect the uninitialised state - AlarmAt == 0, and replace with something more reasonable
-		if ( g_DriveConfig[pItemData->DriveNum].AlarmAt == 0 )
+		// Use 15% figure initially
+		g_DriveConfig[pItemData->DriveNum].AlarmAt = TotalBytes.QuadPart * 15 / 100;
+	}
+
+	/* Calculate in some meaningful way, the actual alarm size figure for this drive */
+	StrFormatByteSizeW( g_DriveConfig[pItemData->DriveNum].AlarmAt, szBufferW, _countof( szBufferW ) );
+	CW2T pT( szBufferW );
+	lvi.pszText = pT;
+	lvi.iSubItem = COL_NOTIFY;
+	::SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi) );
+	//		ListView_SetItemText( hList, Item, COL_NOTIFY, szBufferW );
+
+	pItemData->AlarmAtMB = g_DriveConfig[pItemData->DriveNum].AlarmAt;
+
+	/* Try to make some recommendation based on the free space & current setting */
+	int MsgID;
+
+	if ( TotalFreeBytes.QuadPart < 1ULL * AMEGABYTE )
+	{
+		/* The total free space on the drive is very limited - advise freeing some space before it's too late */
+		MsgID = IDS_RECOMEND_VERY_LOW;
+	}
+	else
+	{
+		/* Have we got less than the user's alarm setting? */
+		if ( g_DriveConfig[pItemData->DriveNum].AlarmAt >= TotalFreeBytes.QuadPart )
 		{
-			// Use 15% figure initially
-			g_DriveConfig[pItemData->DriveNum].AlarmAt = TotalBytes.QuadPart * 15 / 100;
-		}
-
-		/* Calculate in some meaningful way, the actual alarm size figure for this drive */
-		StrFormatByteSizeW( g_DriveConfig[pItemData->DriveNum].AlarmAt, szBufferW, _countof( szBufferW ) );
-		CW2T pT( szBufferW );
-		lvi.pszText = pT;
-		lvi.iSubItem = COL_NOTIFY;
-		::SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>( &lvi ) );
-//		ListView_SetItemText( hList, Item, COL_NOTIFY, szBufferW );
-
-		pItemData->AlarmAtMB = g_DriveConfig[ pItemData->DriveNum ].AlarmAt;
-
-		/* Try to make some recommendation based on the free space & current setting */
-		int MsgID;
-
-		if ( TotalFreeBytes.QuadPart < 1ULL * AMEGABYTE )
-		{
-			/* The total free space on the drive is very limited - advise freeing some space before it's too late */
-			MsgID = IDS_RECOMEND_VERY_LOW;
-		}
-		else
-		{
-			/* Have we got less than the user's alarm setting? */
-			if ( g_DriveConfig[ pItemData->DriveNum ].AlarmAt >= TotalFreeBytes.QuadPart )
+			/* Yes, we're at the alarm point */
+			/* Have we got sufficient space to defragment the drive? */
+			if ( TotalFreeBytes.QuadPart < (15 * pItemData->DriveSize) / 100 )
 			{
-				/* Yes, we're at the alarm point */
-				/* Have we got sufficient space to defragment the drive? */
-				if ( TotalFreeBytes.QuadPart < ( 15 * pItemData->DriveSize ) / 100)
-				{
-					MsgID = IDS_RECOMMEND_FREE_SPACE;
-				}
-				else
-				{
-					/* We've already exceeded the alarm point - better alter it to prevent repeated alarms */
-					MsgID = IDS_RECOMEND_BELOW_THRESHOLD;
-				}
+				MsgID = IDS_RECOMMEND_FREE_SPACE;
 			}
 			else
 			{
-				if ( ( TotalFreeBytes.QuadPart - g_DriveConfig[ pItemData->DriveNum ].AlarmAt ) < 2ULL * AMEGABYTE )
-				{
-					/* We're pretty close to the alarm point - watch out! */
-					MsgID = IDS_RECOMEND_NEAR_THRESHOLD;
-				}
-				else
-				{
-					MsgID = 0;
-				}
-			}
-		}
-
-		lvi.iSubItem = COL_RECOMENDATION;
-
-		if ( MsgID != 0 )
-		{
-			CString str;
-			if ( str.LoadString( g_hInstance, MsgID ) )
-			{
-				lvi.pszText = const_cast<LPTSTR>(static_cast<LPCTSTR>(str));
-
-				SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>( &lvi ) );
-			}
-			else
-			{
-				// What's gone wrong to lose the string?
-				_ASSERT( false );
+				/* We've already exceeded the alarm point - better alter it to prevent repeated alarms */
+				MsgID = IDS_RECOMEND_BELOW_THRESHOLD;
 			}
 		}
 		else
 		{
-			lvi.pszText = nullptr;
-			SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>( &lvi ) );
+			if ( (TotalFreeBytes.QuadPart - g_DriveConfig[pItemData->DriveNum].AlarmAt) < 2ULL * AMEGABYTE )
+			{
+				/* We're pretty close to the alarm point - watch out! */
+				MsgID = IDS_RECOMEND_NEAR_THRESHOLD;
+			}
+			else
+			{
+				MsgID = 0;
+			}
 		}
+	}
+
+	lvi.iSubItem = COL_RECOMENDATION;
+
+	if ( MsgID != 0 )
+	{
+		CString str;
+		if ( str.LoadString( g_hInstance, MsgID ) )
+		{
+			lvi.pszText = const_cast<LPTSTR>(static_cast<LPCTSTR>(str));
+
+			SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi) );
+		}
+		else
+		{
+			// What's gone wrong to lose the string?
+			_ASSERT( false );
+		}
+	}
+	else
+	{
+		lvi.pszText = nullptr;
+		SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi) );
 	}
 }
 
@@ -876,6 +874,7 @@ static ATOM MyRegisterClass(HINSTANCE hInstance) noexcept
 static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
 	g_hResInst = g_hInstance = hInstance; // Store instance handle in our global variable
+// Not necessary as no separate resource DLL is used	_AtlBaseModule.SetResourceInstance( g_hResInst );
 
 	InitEvents();
 
@@ -941,7 +940,7 @@ int WINAPI wWinMain(
 	HACCEL hAccelTable;
 
 	// Initialize global strings
-	LoadStringChecked( hInstance, IDS_APP_TITLE, szAppName );
+	std::ignore = szAppName.LoadString( hInstance, IDS_APP_TITLE );
 
 	MyRegisterClass(hInstance);
 

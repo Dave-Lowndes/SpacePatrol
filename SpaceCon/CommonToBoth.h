@@ -1,5 +1,6 @@
 #pragma once
 #include <span>
+//#include <atlstr.h>
 
 #pragma pack( push )
 #pragma pack( 1 )
@@ -34,12 +35,18 @@ extern void InitEvents();
 inline constexpr const TCHAR szRegistryKey[] = _T( "Software\\JD Design\\SpaceCon" );
 inline constexpr LPCTSTR SETTINGS = _T( "DriveSettings" );
 
-inline void LoadStringChecked( HINSTANCE hInstance, UINT uID, std::span<TCHAR> Buffer )
-{
-#if _DEBUG
-const int NumCharsLoaded =
-#endif
-	LoadString( hInstance, uID, Buffer.data(), Buffer.size() );	//-V530
-	// Resource string must be present
-	_ASSERT( NumCharsLoaded != 0 );
-}
+///// <summary>
+///// Loads a string resource from a module and returns it as a wide-character string (CStringW).
+///// </summary>
+///// <param name="hInstance">A handle to the module containing the string resource.</param>
+///// <param name="uID">The identifier of the string resource to load.</param>
+///// <returns>A CStringW object containing the loaded string resource.</returns>
+//inline CStringW LoadResourceString( HINSTANCE hInstance, UINT uID )
+//{
+//	// Use LoadStringW in the slightly unusual manner to get a pointer to
+//	// the string resource without having to copy it to a buffer.
+//	TCHAR* ptr;
+//	const auto NumChars = LoadStringW( hInstance, uID, reinterpret_cast<LPTSTR>(&ptr), 0 );
+//	// Now copy to return a CStringW
+//	return { ptr, NumChars };
+//}
