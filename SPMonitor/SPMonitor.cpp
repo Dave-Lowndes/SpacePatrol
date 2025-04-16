@@ -227,6 +227,10 @@ static void MonitorDiskSpace( LPTSTR pDrive, NOTIFYICONDATA& nid )
 				}
 				else
 				{
+					//auto hr = GetLastError();
+					//CString strError;
+					//strError.Format( _T( "Failed to remove icon: %d" ), hr );
+					//OutputDebugString( strError );
 					/* Failed to remove icon */
 					MessageBeep( MB_OK );
 				}
@@ -256,6 +260,7 @@ static void HandleMonitorTimer( HWND hWnd )
 	NOTIFYICONDATA nid;
 	nid.cbSize = sizeof( nid );
 	nid.hWnd = hWnd;
+	nid.uFlags = 0;
 
 	WORD dNum;
 	/* Loop for all disk drives on the system */
@@ -603,6 +608,7 @@ static UINT g_TaskBarCreated = 0;
 			NOTIFYICONDATA nid;
 			nid.cbSize = sizeof( nid );
 			nid.hWnd = hWnd;
+			nid.uFlags = 0;
 
 			for ( int dNum = 0; dNum < 26; dNum++ )
 			{
