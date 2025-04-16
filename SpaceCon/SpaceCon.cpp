@@ -10,6 +10,7 @@
 #include <commctrl.h>
 #include <Shlwapi.h>
 #pragma comment( lib, "Shlwapi.lib" )
+#include <windowsx.h>
 #include <strsafe.h>
 #include <VersionHelpers.h>
 #include <process.h>
@@ -45,6 +46,7 @@ static LPCTSTR szWindowClass = _T("JDDESIGN_SPACECON");
 static optional<CMyRegData> g_RegData;
 
 constexpr auto AMEGABYTE{ 1024 * 1024 };
+constexpr auto AGIGABYTE{ 1024 * 1024 * 1024 };
 
 struct COLSTRUCT
 {
@@ -77,20 +79,16 @@ public:
 	// These items are used solely to convey display information to the modify dialog
 
 	TCHAR szVolName[MAX_PATH+1];	// The drive name
-	ULONGLONG DriveSize;	// Total Size
-	ULONGLONG FreeSpace;	// The free space on this disk drive
-	ULONGLONG AlarmAtMB;	// The threshold point
-
+	TCHAR szDrive[_MAX_DRIVE + 1];	// The drive letter string "C:\" (needed to do the list refresh)
 	/* This is needed to associate the list item with the physical disk drive number (for the global setting store g_DriveConfig) */
-	int DriveNum;			// The drive number
-	TCHAR szDrive[_MAX_DRIVE+1];	// The drive letter string "C:\" (needed to do the list refresh)
+	int DriveNum{ -1 };			// The drive number
+	ULONGLONG DriveSize{ 0 };	// Total Size
+	ULONGLONG FreeSpace{ 0 };	// The free space on this disk drive
+	ULONGLONG AlarmThreshold{ 0 };	// The threshold point
+
 	CModDlgParams() noexcept
 	{
 		szVolName[0] = _T('\0');
-		DriveSize = 0;
-		FreeSpace = 0;
-		AlarmAtMB = 0;
-		DriveNum = -1;
 		szDrive[0] = _T('\0');
 	}
 };
@@ -149,20 +147,14 @@ static void UpdateDriveInformation( HWND hList, int Item, WORD DriveNum, LPCTSTR
 	if ( GetDiskFreeSpaceEx( pItemData->szDrive, &CallerFreeBytes, &TotalBytes, &TotalFreeBytes ) )
 	{
 		StrFormatByteSizeW( TotalBytes.QuadPart, szBufferW, _countof( szBufferW ) );
-		{
-		CW2T pT( szBufferW );
-		lvi.pszText = pT;
+		lvi.pszText = szBufferW;
 		lvi.iSubItem = COL_SIZE;
 		::SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>( &lvi ) );
-		}
 
 		StrFormatByteSizeW( TotalFreeBytes.QuadPart, szBufferW, _countof( szBufferW ) );
-		{
-		CW2T pT( szBufferW );
-		lvi.pszText = pT;
+		lvi.pszText = szBufferW;
 		lvi.iSubItem = COL_TOT_FREE;
 		::SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>( &lvi ) );
-		}
 
 		pItemData->DriveSize = TotalBytes.QuadPart;
         pItemData->FreeSpace = TotalFreeBytes.QuadPart;
@@ -178,13 +170,12 @@ static void UpdateDriveInformation( HWND hList, int Item, WORD DriveNum, LPCTSTR
 
 	/* Calculate in some meaningful way, the actual alarm size figure for this drive */
 	StrFormatByteSizeW( g_DriveConfig[pItemData->DriveNum].AlarmAt, szBufferW, _countof( szBufferW ) );
-	CW2T pT( szBufferW );
-	lvi.pszText = pT;
+	lvi.pszText = szBufferW;
 	lvi.iSubItem = COL_NOTIFY;
 	::SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi) );
 	//		ListView_SetItemText( hList, Item, COL_NOTIFY, szBufferW );
 
-	pItemData->AlarmAtMB = g_DriveConfig[pItemData->DriveNum].AlarmAt;
+	pItemData->AlarmThreshold = g_DriveConfig[pItemData->DriveNum].AlarmAt;
 
 	/* Try to make some recommendation based on the free space & current setting */
 	int MsgID;
@@ -249,6 +240,28 @@ static void UpdateDriveInformation( HWND hList, int Item, WORD DriveNum, LPCTSTR
 	}
 }
 
+static void UpdateSizeDescription( HWND hDlg )
+{
+	BOOL bTranslated;
+
+	// Max value is 0xffffffff = 4294967295 (10 characters), anything greater returns 0, so 0 gets displayed
+	const auto UnitsVal = GetDlgItemInt( hDlg, IDC_ALARMAT, &bTranslated, false );
+
+	{
+		const auto hCB = GetDlgItem( hDlg, IDC_COMBO_SIZE_UNITS );
+		const auto Multiplier = ComboBox_GetItemData( hCB, ComboBox_GetCurSel( hCB ) );
+		const auto ValueInBytes = static_cast<ULONGLONG>(UnitsVal) * Multiplier;
+
+		// Display the value as it'll be shown in the main dialog list to clarify the value entered.
+		WCHAR szBufferW[20];
+		StrFormatByteSizeW( ValueInBytes, szBufferW, std::size( szBufferW ) );
+		SetDlgItemText( hDlg, IDC_SIZE_DESC, szBufferW );
+	}
+
+	// Enable the OK button only if the value was OK
+	EnableWindow( GetDlgItem( hDlg, IDOK ), bTranslated );
+}
+
 static INT_PTR CALLBACK ModifyDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	static CModDlgParams * pModParams;
@@ -263,19 +276,35 @@ static INT_PTR CALLBACK ModifyDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			WCHAR szBufferW[20];
 
 			StrFormatByteSizeW( pModParams->DriveSize, szBufferW, _countof( szBufferW ) );
-			{
-			CW2CT pT( szBufferW );
-			SetDlgItemText( hDlg, IDC_DRIVE_SIZE, pT );
-			}
+			SetDlgItemText( hDlg, IDC_DRIVE_SIZE, szBufferW );
 			
 			StrFormatByteSizeW( pModParams->FreeSpace, szBufferW, _countof( szBufferW ) );
+			SetDlgItemText( hDlg, IDC_DRIVE_FREE, szBufferW );
+
+			// Use GB only if the threshold is a multiple of 1GB
+			const bool bUseGBRange = (pModParams->AlarmThreshold % AGIGABYTE) == 0;
+
+			// Populate the units combo box
 			{
-			CW2CT pT( szBufferW );
-			SetDlgItemText( hDlg, IDC_DRIVE_FREE, pT );
+				const auto hCB = GetDlgItem( hDlg, IDC_COMBO_SIZE_UNITS );
+
+				ComboBox_InsertString( hCB, 0, _T( "MB" ) );
+				ComboBox_SetItemData( hCB, 0, AMEGABYTE );
+
+				ComboBox_InsertString( hCB, 1, _T( "GB" ) );
+				ComboBox_SetItemData( hCB, 1, AGIGABYTE );
+
+				// Default to whichever is most appropriate for the current size
+				ComboBox_SetCurSel( hCB, bUseGBRange ? 1 : 0 );
 			}
 
-			/* Display/edit the threshold value in MB */
-			SetDlgItemInt( hDlg, IDC_ALARMAT, static_cast<UINT>(pModParams->AlarmAtMB/AMEGABYTE), false );
+			// Limit the number of characters that can be entered into the numeric edit field.
+			// 4294967295 (0xFFFFFFFF) is the max value that can be entered.
+			Edit_LimitText( GetDlgItem( hDlg, IDC_ALARMAT ), 10 );
+
+			/* Display the threshold value in GB or MB depending on the current value */
+			const auto UnitsVal = pModParams->AlarmThreshold / (bUseGBRange ? AGIGABYTE : AMEGABYTE);
+			SetDlgItemInt( hDlg, IDC_ALARMAT, static_cast<UINT>(UnitsVal), false );
 		}
 		return TRUE;
 
@@ -283,8 +312,13 @@ static INT_PTR CALLBACK ModifyDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 		switch( LOWORD(wParam ) )
 		{
 		case IDOK:
-			pModParams->AlarmAtMB = GetDlgItemInt( hDlg, IDC_ALARMAT, NULL, false );
-			pModParams->AlarmAtMB *= AMEGABYTE;
+			{
+				const auto UnitsVal = GetDlgItemInt( hDlg, IDC_ALARMAT, nullptr, false );
+				const auto hCB = GetDlgItem( hDlg, IDC_COMBO_SIZE_UNITS );
+				const auto Multiplier = ComboBox_GetItemData( hCB, ComboBox_GetCurSel( hCB ) );
+
+				pModParams->AlarmThreshold = static_cast<ULONGLONG>(UnitsVal) * Multiplier;
+			}
 			[[fallthrough]];	// Intentional!
 
 		case IDCANCEL:
@@ -292,10 +326,34 @@ static INT_PTR CALLBACK ModifyDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			return TRUE;
 
 		case IDC_PRESET:
-			/* Calculate 15% of the capacity */
-			pModParams->AlarmAtMB = ( pModParams->DriveSize * 15 ) / 100;
-			SetDlgItemInt( hDlg, IDC_ALARMAT, static_cast<UINT>(pModParams->AlarmAtMB/AMEGABYTE), false );
+			{
+				/* Calculate 15% of the capacity */
+				pModParams->AlarmThreshold = (pModParams->DriveSize * 15) / 100;
+
+				const auto hCB = GetDlgItem( hDlg, IDC_COMBO_SIZE_UNITS );
+				const auto Divisor = ComboBox_GetItemData( hCB, ComboBox_GetCurSel( hCB ) );
+
+				SetDlgItemInt( hDlg, IDC_ALARMAT, static_cast<UINT>(pModParams->AlarmThreshold / Divisor), false );
+			}
 			return TRUE;
+
+		case IDC_COMBO_SIZE_UNITS:
+			if ( HIWORD( wParam ) == CBN_SELCHANGE )
+			{
+				UpdateSizeDescription( hDlg );
+
+				return true;
+			}
+			break;
+
+		case IDC_ALARMAT:
+			if ( HIWORD( wParam) == EN_CHANGE )
+			{
+				UpdateSizeDescription( hDlg );
+
+				return true;
+			}
+			break;
 		}
 		break;
 	}
@@ -599,7 +657,7 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
                     if ( IDOK == DialogBoxParam( g_hResInst, MAKEINTRESOURCE( IDD_MOD_DLG ), hDlg, ModifyDlg, reinterpret_cast<LPARAM>( mp ) ) )
 					{
 						/* Modified value returned - copy alarm value to global settings */
-						g_DriveConfig[ mp->DriveNum ].AlarmAt = mp->AlarmAtMB;
+						g_DriveConfig[ mp->DriveNum ].AlarmAt = mp->AlarmThreshold;
 
 						/* Update list display */
 						UpdateDriveInformation( hList, SelItem, 0, nullptr );

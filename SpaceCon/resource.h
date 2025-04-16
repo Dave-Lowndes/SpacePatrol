@@ -12,7 +12,6 @@
 #define IDI_SPACECON                    107
 #define IDS_FAILED_WRITE_REG            107
 #define IDI_SMALL                       108
-#define IDS_STRING108                   108
 #define IDS_UNSAVED_PROMPT              108
 #define IDC_SPACECON                    109
 #define IDS_YOU_CANT_CHANGE_SETTINGS    113
@@ -43,6 +42,8 @@
 #define IDC_COPYRIGHT                   1009
 #define IDC_PRESET                      1010
 #define IDC_VERSION                     1010
+#define IDC_COMBO_SIZE_UNITS            1011
+#define IDC_SIZE_DESC                   1013
 #define IDC_CHECK_FOR_UPDATE            1067
 #define IDC_WEB_HOME                    1068
 #define IDC_REG_USER                    1073
@@ -63,7 +64,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        138
 #define _APS_NEXT_COMMAND_VALUE         32781
-#define _APS_NEXT_CONTROL_VALUE         1011
+#define _APS_NEXT_CONTROL_VALUE         1014
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif
