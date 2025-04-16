@@ -239,6 +239,14 @@ type "%(Filename).log"
     </ResourceCompile>
     <ResourceCompile Include="SpaceCon.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\ReadMe\Notification on Win10-1.png">
+      <DeploymentContent>true</DeploymentContent>
+    </Image>
+    <Image Include="..\ReadMe\Notification on Win10-2.png">
+      <DeploymentContent>true</DeploymentContent>
+    </Image>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -52,11 +52,21 @@ li
 
 <body>
 
-<h1>Space Patrol V2.4.1.0</h1>
+<h1>Space Patrol</h1>
 <p>Space Patrol monitors the available space on your local hard disk drives and provides a notification when the configurable threshold level is reached.</p>
 <p>Unlike the built-in provision in some of the Windows operating systems, Space Patrol gives you full control over the threshold level and provides a consistent notification user interface for all supported versions of Windows.</p>
-<h4>Space Patrol - Copyright &copy; 2002-2023 JD Design, All Rights Reserved</h4>
-<h2>Installation</h2>
+<dl>
+	<dd><a href="#Installation" target="_self">Installation</a></dd>
+	<dd><a href="#Using SP" target="_self">Using Space Patrol</a></dd>
+	<dd><a href="#Registering" target="_self">Registering</a></dd>
+	<dd><a href="#Updates" target="_self">Updates</a></dd>
+	<dd><a href="#FAQs" target="_self">FAQs</a></dd>
+	<dd><a href="#Uninstall" target="_self">Uninstalling</a></dd>
+	<dd><a href="#Support" target="_self">Support</a></dd>
+	<dd><a href="revision_history.htm" target="_blank">Version History</a></dd>
+</dl>
+<h4>Space Patrol - Copyright &copy; 2002-2025 JD Design, All Rights Reserved</h4>
+<h2><a name="Installation"></a>Installation</h2>
 <ol>
 	<li>Expand the zip file to a directory on your machine and run the setup program.</li>
 	<li>Follow the on-screen 
@@ -70,7 +80,7 @@ any of the Space Patrol start menu shortcuts the installation will complete.</p>
 <p>or:</p>
 <p><span class="indent-code">msiexec /a spacecon.msi</span></p>
 <p>Performs an "administrative" installation to a shared network location.</p>
-<h2>How Do You Use Space Patrol?</h2>
+<h2><a name="Using SP"></a>How Do You Use Space Patrol?</h2>
 <ol>
 	<li>Once installed, run the Space Patrol Monitor program from your Start menu. 
 You'll only need to do this once as it will start automatically when you next 
@@ -82,7 +92,8 @@ log on. It does this by adding a
 	enabled, you'll be prompted by Windows UAC when you start it.</li>
 </ol>
 <p>The Space Patrol configuration program displays your disk drive information and suggests where you may want to alter the setting.</p>
-<p class="indent"><img alt="Space Patrol Configuration dialog" src="ConfigDlg.png"></p>
+<p class="indent">
+<img alt="Main UI screenshot" longdesc="Space Patrol dialog screenshot" src="configdlg.png" height="260" width="842"></p>
 <p>Monitoring can be enabled per-disk drive, and for 
 those operating systems that have an inbuilt low disk space notification facility, Space Patrol lets you disable the operating system's facility.</p>
 <p>For Windows XP and later, this setting affects the HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer NoLowDiskSpaceChecks 
@@ -90,7 +101,8 @@ registry setting.</p>
 <ol>
 	<li>To alter the threshold setting, select the drive and double click (or use the Modify button).</li>
 	<li>Alter the notification level using the "Modify Notification Threshold" dialog.
-		<p><img alt="Modify Threshold Dialog" src="ThresholdDlg.png"></p>
+		<p>You can enter the threshold level as either MB or GB.
+		<img alt="Modify dialog screenshot" longdesc="Modify Notification Threshold dialog screenshot" src="thresholddlg.png" class="rhs-img" height="180" width="295"></p>
 	</li>
 	<li>If you want to disable the operating system facility, check the "Disable the operating system's built-in low-disk space checking facility" button.</li>
 	<li>When you've configured the settings to be how you want them, press the Apply button to commit the settings.</li>
@@ -99,9 +111,12 @@ registry setting.</p>
 depending on your version of Windows, a popup notification indication. This notification will recur periodically, getting less frequent the longer 
 the low disk space situation persists - so as not to annoy you too much if you choose to ignore it.</p>
 <p><img alt="Notification Icon for Windows 8.1" class="rhs-img" height="128" src="Notification%20on%20Win8.1.png" style="float: right" width="360"></p>
-<p>Here's how the notification looks under Windows 8.1. The actual presentation 
-is different under different versions of Windows.</p>
-<h3>Registering</h3>
+<p>Here's how the notification looks for Windows 8.1. The actual presentation 
+is different for different versions of Windows.</p>
+<p style="clear:both">For example, here's how it looks for Windows 10:<img alt="" class="rhs-img" style="float:right" src="notification%20on%20win10-2.png" height="202" width="369"></p>
+<p style="clear:both">While hovering the mouse over the notification icon shows:
+<img alt="" src="notification%20on%20win10-1.png" class="rhs-img" style="float:right" height="56" width="324"></p>
+<h3 style="clear:both"><a name="Registering"></a>Registering</h3>
 <p>Although Space Patrol is now free to use, if you'd like to contribute to its 
 maintenance, you can do so online using one of the secure payment 
 facilities on <a href="https://dave-lowndes.github.io/Jdd_Web/register.htm">our web site</a>. The core source code is available for
@@ -114,16 +129,15 @@ About dialog box. You can access this dialog from the Space Patrol
 configuration dialog's "About" button (see the screen shot above).</p>
 <p>You can check that registration has worked by re-displaying the About box from 
 the main dialog.</p>
-<h2>Updates</h2>
-<p>Any updates to the current version are free to registered users by downloading the latest version from our web site. Your current registration number will 
+<h2><a name="Updates"></a>Updates</h2>
+<p>Any updates to the current version are freely available by downloading the latest version from our web site. Your current registration number will 
 continue to work with updates.</p>
-<h2>Problems/FAQ's?</h2>
+<h2><a name="FAQs"></a>Problems/FAQ's?</h2>
 <p>For up-to-date information, check the FAQs on <a href="https://dave-lowndes.github.io/Jdd_Web/" target="_blank">our web site</a>.</p>
-<h2>Removal</h2>
+<h2><a name="Uninstall"></a>Removal</h2>
 <p>Use the Control Panel, Add/Remove Programs (Programs and Features)/Apps and 
 Features and choose the Space Patrol item.</p>
-<h2><a href="revision_history.htm" target="_blank">Revision History</a></h2>
-<h2>Support</h2>
+<h2><a name="Support"></a>Support</h2>
 <p>We maintain a list of frequently asked questions on our web site. If you have a technical question, please check there to see if you can find an answer 
 before contacting us.</p>
 <p>We will post the latest versions of our utilities on our web site as soon as they are available, so please take a look to keep up to date and to see what 

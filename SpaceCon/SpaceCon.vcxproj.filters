@@ -19,6 +19,9 @@
     <Filter Include="Source Files\LibraryCode">
       <UniqueIdentifier>{9c957870-25bb-448c-9b18-2e5953848bae}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Readme">
+      <UniqueIdentifier>{b39a0d9f-2c5d-46e3-ae59-e5e09b6e5388}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SpaceCon.cpp">
@@ -65,10 +68,18 @@
     <None Include="SpaceCon.ico">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\ReadMe\ConfigDlg.png" />
-    <None Include="..\ReadMe\Notification on Win8.1.png" />
-    <None Include="..\ReadMe\revision_history.htm" />
-    <None Include="..\ReadMe\ThresholdDlg.png" />
+    <None Include="..\ReadMe\ConfigDlg.png">
+      <Filter>Readme</Filter>
+    </None>
+    <None Include="..\ReadMe\Notification on Win8.1.png">
+      <Filter>Readme</Filter>
+    </None>
+    <None Include="..\ReadMe\revision_history.htm">
+      <Filter>Readme</Filter>
+    </None>
+    <None Include="..\ReadMe\ThresholdDlg.png">
+      <Filter>Readme</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -117,5 +128,13 @@
     <CustomBuild Include="SpacePatrol.hpj">
       <Filter>Source Files</Filter>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\ReadMe\Notification on Win10-1.png">
+      <Filter>Readme</Filter>
+    </Image>
+    <Image Include="..\ReadMe\Notification on Win10-2.png">
+      <Filter>Readme</Filter>
+    </Image>
   </ItemGroup>
 </Project>
