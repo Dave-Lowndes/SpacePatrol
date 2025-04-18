@@ -93,6 +93,13 @@ public:
 	}
 };
 
+/// <summary>
+/// Updates the information displayed for a specific drive in a list view control.
+/// </summary>
+/// <param name="hList">Handle to the list view control where the drive information is displayed.</param>
+/// <param name="Item">The index of the item in the list view to update.</param>
+/// <param name="DriveNum">The drive number associated with the drive being updated.</param>
+/// <param name="pDrive">A string representing the drive path or identifier. If null, the function refreshes existing data.</param>
 static void UpdateDriveInformation( HWND hList, int Item, WORD DriveNum, LPCTSTR pDrive )
 {
 	CModDlgParams * pItemData;
@@ -580,6 +587,9 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			/* Enable the OS feature if it's not an OS with the feature */
 			EnableWindow( GetDlgItem( hDlg, IDC_DISABLE_OS), IsXP() /*|| IsWin98()*/ );
 
+			// Disable the apply button until we make a change
+			EnableWindow( GetDlgItem( hDlg, IDC_SAVE ), false );
+
 			// Start a timer to update the list control items
 			SetTimer( hDlg, 1, POLL_TIME, NULL );
 		}
@@ -604,6 +614,8 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			{
 			case LVN_ITEMCHANGED:
 				{
+					// Handle changes to the check box state
+
 					LPNMLISTVIEW plv = reinterpret_cast<LPNMLISTVIEW>( lParam );
 					if ( plv->uChanged & LVIF_STATE )
 					{
@@ -615,6 +627,11 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 
 							/* Set the modified flag */
 							g_bModified = true;
+
+							/* Enable the apply button */
+							EnableWindow( GetDlgItem( hDlg, IDC_SAVE ), true );
+
+							return TRUE;
 						}
 					}
 				}
@@ -641,7 +658,6 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 					SetWindowLong( hDlg, DWL_MSGRESULT, TRUE );
 					return TRUE;
 				}
-				break;
 
 			case NM_DBLCLK:
 				/* Do the same as single click and the default operation - Modify */
@@ -681,6 +697,9 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 
 						/* Set the modified flag */
 						g_bModified = true;
+
+						/* Enable the apply button */
+						EnableWindow( GetDlgItem( hDlg, IDC_SAVE ), true );
 					}
 				}
 			}
@@ -691,6 +710,11 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			{
 				/* Set the modified flag */
 				g_bModified = true;
+
+				/* Enable the apply button */
+				EnableWindow( GetDlgItem( hDlg, IDC_SAVE ), true );
+
+				return TRUE;
 			}
 			break;
 
@@ -711,6 +735,14 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 
 						if ( ERROR_SUCCESS == RegRes )
 						{
+							// Disable the apply button (after moving focus in case it was on this button)
+							HWND hSaveWnd = GetDlgItem( hDlg, IDC_SAVE );
+
+							if ( GetFocus() == hSaveWnd )
+							{
+								FORWARD_WM_NEXTDLGCTL( hDlg, NULL, false, SendMessage );
+							}
+							EnableWindow( hSaveWnd, false );
 						}
 						else
 						{
