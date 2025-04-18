@@ -401,6 +401,9 @@ static int MessageBoxForSystemError( HWND hDlg, DWORD ErrorValue, LPCTSTR pAppNa
 	return rv;
 }
 
+// This is the time that we (should) keep updating the list control items
+constexpr auto POLL_TIME{ 45 * 1000 };
+
 static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	static bool g_bModified = false;
@@ -576,8 +579,23 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 
 			/* Enable the OS feature if it's not an OS with the feature */
 			EnableWindow( GetDlgItem( hDlg, IDC_DISABLE_OS), IsXP() /*|| IsWin98()*/ );
+
+			// Start a timer to update the list control items
+			SetTimer( hDlg, 1, POLL_TIME, NULL );
 		}
 		return TRUE;
+
+		case WM_TIMER:
+			{
+				const HWND hList = GetDlgItem( hDlg, IDC_LIST );
+				/* Update the list control items */
+				const int NumItems = ListView_GetItemCount( hList );
+				for ( int indx = 0; indx < NumItems; indx++ )
+				{
+					UpdateDriveInformation( hList, indx, 0, nullptr );
+				}
+			}
+			return TRUE;
 
 	case WM_NOTIFY:
 		{
