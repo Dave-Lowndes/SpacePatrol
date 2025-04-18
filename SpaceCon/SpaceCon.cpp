@@ -834,10 +834,6 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			return TRUE;
 		}
 		break;
-
-	case WM_DESTROY:
-		WinHelp( hDlg, NULL, HELP_QUIT, 0 );
-		break;
 	}
 	return FALSE;
 }
