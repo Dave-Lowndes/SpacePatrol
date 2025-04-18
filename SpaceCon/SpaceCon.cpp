@@ -411,9 +411,8 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 		{
 			const HWND hList = GetDlgItem( hDlg, IDC_LIST );
 
-			/* Give the list control the full row select & checkboxes for each item */
-			ListView_SetExtendedListViewStyleEx( hList, LVS_EX_FULLROWSELECT | LVS_EX_CHECKBOXES,
-						LVS_EX_FULLROWSELECT | LVS_EX_CHECKBOXES );
+			/* Give the list control the full row select, checkboxes, and tooltip for partially shown items */
+			ListView_SetExtendedListViewStyle( hList, LVS_EX_FULLROWSELECT | LVS_EX_CHECKBOXES | LVS_EX_INFOTIP );
 
 			/* Initialise the columns of the list control */
 			{
