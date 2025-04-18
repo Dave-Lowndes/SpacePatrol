@@ -94,56 +94,59 @@ public:
 };
 
 /// <summary>
-/// Updates the information displayed for a specific drive in a list view control.
+/// Inserts drive data into a list view control and sets its state.
+/// </summary>
+/// <param name="hList">Handle to the list view control where the drive data will be inserted.</param>
+/// <param name="Item">The index of the item in the list view where the drive data will be inserted.</param>
+/// <param name="DriveNum">The drive number associated with the drive data.</param>
+/// <param name="pDrive">A pointer to a string containing the drive path or identifier.</param>
+static void InsertDriveDataIntoListControl( HWND hList, int Item, WORD DriveNum, LPCTSTR pDrive )
+{
+	/* Allocate a new per-item data */
+	auto pItemData = new CModDlgParams();
+
+	pItemData->DriveNum = DriveNum;
+	StringCchCopy( pItemData->szDrive, _countof( pItemData->szDrive ), pDrive );
+
+	/* Get the cosmetic drive name */
+	SHFILEINFO sfi{ 0 };	// Init only to silence the compiler warning unnecessarily
+	if ( SHGetFileInfo( pItemData->szDrive, FILE_ATTRIBUTE_DIRECTORY, &sfi, sizeof( sfi ), SHGFI_DISPLAYNAME ) )
+	{
+		StringCchCopy( pItemData->szVolName, _countof( pItemData->szVolName ), sfi.szDisplayName );
+	}
+
+	LVITEMW lvi;
+	lvi.mask = LVIF_TEXT | LVIF_PARAM;
+	lvi.iItem = Item;
+	lvi.iSubItem = 0;
+	lvi.pszText = pItemData->szVolName;
+
+	/* Although all the data structure isn't populated, because the state
+	* change notification happens as a result of subsequent operations here,
+	* I need to set up the drive number ready to handle this.
+	*/
+	lvi.lParam = reinterpret_cast<LPARAM>(pItemData);
+
+	/* Can't set the check box when inserting */
+	ListView_InsertItem( hList, &lvi );
+
+	/* Set the check box to indicate the current enabled/disabled state. */
+	ListView_SetCheckState( hList, Item, g_DriveConfig[pItemData->DriveNum].bCheckMe );
+}
+
+/// <summary>
+/// Updates the drive information displayed in a list view control, including size, free space, and alarm thresholds.
 /// </summary>
 /// <param name="hList">Handle to the list view control where the drive information is displayed.</param>
 /// <param name="Item">The index of the item in the list view to update.</param>
-/// <param name="DriveNum">The drive number associated with the drive being updated.</param>
-/// <param name="pDrive">A string representing the drive path or identifier. If null, the function refreshes existing data.</param>
-static void UpdateDriveInformation( HWND hList, int Item, WORD DriveNum, LPCTSTR pDrive )
+static void UpdateDriveInformation( HWND hList, int Item )
 {
-	CModDlgParams * pItemData;
 	LVITEM lvi;
+	lvi.mask = LVIF_PARAM;
+	lvi.iItem = Item;
+	ListView_GetItem( hList, &lvi );
 
-	/* Only insert the item if it's the initialisation time, refreshes overwrite */
-	if ( pDrive != nullptr )
-	{
-		/* Allocate a new per-item data */
-		pItemData = new CModDlgParams();
-
-		pItemData->DriveNum = DriveNum;
-		StringCchCopy( pItemData->szDrive, _countof( pItemData->szDrive ), pDrive );
-
-		/* Get the cosmetic drive name */
-		SHFILEINFO sfi{ 0 };	// Init only to silence the compiler warning unnecessarily
-		if ( SHGetFileInfo( pItemData->szDrive, FILE_ATTRIBUTE_DIRECTORY, &sfi, sizeof( sfi ), SHGFI_DISPLAYNAME ) )
-		{
-			StringCchCopy( pItemData->szVolName, _countof( pItemData->szVolName ), sfi.szDisplayName );
-		}
-		lvi.mask = LVIF_TEXT | LVIF_PARAM;
-		lvi.iItem = Item;
-		lvi.iSubItem = 0;
-		lvi.pszText = pItemData->szVolName;
-
-		/* Although all the data structure isn't populated, because the state
-		 * change notification happens as a result of subsequent operations here,
-		 * I need to set up the drive number ready to handle this.
-		 */
-		lvi.lParam = reinterpret_cast<LPARAM>( pItemData );
-
-		/* Can't set the check box when inserting */
-		ListView_InsertItem( hList, &lvi );
-
-		/* Set the check box to indicate the current enabled/disabled state. */
-		ListView_SetCheckState( hList, Item, g_DriveConfig[ pItemData->DriveNum ].bCheckMe );
-	}
-	else
-	{
-		lvi.mask = LVIF_PARAM;
-		lvi.iItem = Item;
-		ListView_GetItem( hList, &lvi );
-        pItemData = reinterpret_cast<CModDlgParams *>( lvi.lParam );
-	}
+	CModDlgParams& ItemData = *reinterpret_cast<CModDlgParams *>( lvi.lParam );
 
 	ULARGE_INTEGER CallerFreeBytes, TotalBytes, TotalFreeBytes;
 	WCHAR szBufferW[20];
@@ -151,77 +154,68 @@ static void UpdateDriveInformation( HWND hList, int Item, WORD DriveNum, LPCTSTR
 	/* Hard to believe, but the stupid ASCII version of
 	 * StrFormatByteSize, only takes a DWORD size!
 	 */
-	if ( GetDiskFreeSpaceEx( pItemData->szDrive, &CallerFreeBytes, &TotalBytes, &TotalFreeBytes ) )
+	if ( GetDiskFreeSpaceEx( ItemData.szDrive, &CallerFreeBytes, &TotalBytes, &TotalFreeBytes ) )
 	{
 		StrFormatByteSizeW( TotalBytes.QuadPart, szBufferW, _countof( szBufferW ) );
 		lvi.pszText = szBufferW;
 		lvi.iSubItem = COL_SIZE;
-		::SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>( &lvi ) );
+		::SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi) );
 
 		StrFormatByteSizeW( TotalFreeBytes.QuadPart, szBufferW, _countof( szBufferW ) );
 		lvi.pszText = szBufferW;
 		lvi.iSubItem = COL_TOT_FREE;
-		::SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>( &lvi ) );
+		::SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi) );
 
-		pItemData->DriveSize = TotalBytes.QuadPart;
-        pItemData->FreeSpace = TotalFreeBytes.QuadPart;
+		ItemData.DriveSize = TotalBytes.QuadPart;
+        ItemData.FreeSpace = TotalFreeBytes.QuadPart;
 	}
 	
 
 	// Detect the uninitialised state - AlarmAt == 0, and replace with something more reasonable
-	if ( g_DriveConfig[pItemData->DriveNum].AlarmAt == 0 )
+	if ( g_DriveConfig[ItemData.DriveNum].AlarmAt == 0 )
 	{
 		// Use 15% figure initially
-		g_DriveConfig[pItemData->DriveNum].AlarmAt = TotalBytes.QuadPart * 15 / 100;
+		g_DriveConfig[ItemData.DriveNum].AlarmAt = TotalBytes.QuadPart * 15 / 100;
 	}
 
 	/* Calculate in some meaningful way, the actual alarm size figure for this drive */
-	StrFormatByteSizeW( g_DriveConfig[pItemData->DriveNum].AlarmAt, szBufferW, _countof( szBufferW ) );
+	StrFormatByteSizeW( g_DriveConfig[ItemData.DriveNum].AlarmAt, szBufferW, _countof( szBufferW ) );
 	lvi.pszText = szBufferW;
 	lvi.iSubItem = COL_NOTIFY;
 	::SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi) );
-	//		ListView_SetItemText( hList, Item, COL_NOTIFY, szBufferW );
 
-	pItemData->AlarmThreshold = g_DriveConfig[pItemData->DriveNum].AlarmAt;
+	ItemData.AlarmThreshold = g_DriveConfig[ItemData.DriveNum].AlarmAt;
 
 	/* Try to make some recommendation based on the free space & current setting */
-	int MsgID;
-
-	if ( TotalFreeBytes.QuadPart < 1ULL * AMEGABYTE )
+	const auto MsgID = []( ULONGLONG TotalFreeBytes, ULONGLONG AlarmAt, ULONGLONG DriveSize )
 	{
-		/* The total free space on the drive is very limited - advise freeing some space before it's too late */
-		MsgID = IDS_RECOMEND_VERY_LOW;
-	}
-	else
-	{
-		/* Have we got less than the user's alarm setting? */
-		if ( g_DriveConfig[pItemData->DriveNum].AlarmAt >= TotalFreeBytes.QuadPart )
-		{
-			/* Yes, we're at the alarm point */
-			/* Have we got sufficient space to defragment the drive? */
-			if ( TotalFreeBytes.QuadPart < (15 * pItemData->DriveSize) / 100 )
+			if ( TotalFreeBytes < 1ULL * AMEGABYTE )
 			{
-				MsgID = IDS_RECOMMEND_FREE_SPACE;
+				/* The total free space on the drive is very limited - advise freeing some space before it's too late */
+				return IDS_RECOMEND_VERY_LOW;
 			}
 			else
 			{
-				/* We've already exceeded the alarm point - better alter it to prevent repeated alarms */
-				MsgID = IDS_RECOMEND_BELOW_THRESHOLD;
+				/* Have we got less than the user's alarm setting? */
+				if ( AlarmAt >= TotalFreeBytes )
+				{
+					/* Yes, we're at the alarm point */
+					/* Have we got sufficient space to defragment the drive? */
+					return ( TotalFreeBytes < (15 * DriveSize) / 100 ) ?
+								IDS_RECOMMEND_FREE_SPACE :
+								/* We've already exceeded the alarm point - better alter it to prevent repeated alarms */
+								IDS_RECOMEND_BELOW_THRESHOLD;
+				}
+				else
+				{
+					// If we're within 2MB of the alarm point, warn the user
+					return ( (TotalFreeBytes - AlarmAt) < 2ULL * AMEGABYTE ) ?
+								/* We're pretty close to the alarm point - watch out! */
+								IDS_RECOMEND_NEAR_THRESHOLD :
+								0;
+				}
 			}
-		}
-		else
-		{
-			if ( (TotalFreeBytes.QuadPart - g_DriveConfig[pItemData->DriveNum].AlarmAt) < 2ULL * AMEGABYTE )
-			{
-				/* We're pretty close to the alarm point - watch out! */
-				MsgID = IDS_RECOMEND_NEAR_THRESHOLD;
-			}
-			else
-			{
-				MsgID = 0;
-			}
-		}
-	}
+		}( TotalFreeBytes.QuadPart, g_DriveConfig[ItemData.DriveNum].AlarmAt, ItemData.DriveSize );
 
 	lvi.iSubItem = COL_RECOMENDATION;
 
@@ -419,10 +413,10 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 	{
 	case WM_INITDIALOG:
 		{
-			const HWND hList = GetDlgItem( hDlg, IDC_LIST );
+		const HWND hList = GetDlgItem( hDlg, IDC_LIST );
 
 			/* Give the list control the full row select, checkboxes, and tooltip for partially shown items */
-			ListView_SetExtendedListViewStyle( hList, LVS_EX_FULLROWSELECT | LVS_EX_CHECKBOXES | LVS_EX_INFOTIP );
+		ListView_SetExtendedListViewStyle( hList, LVS_EX_FULLROWSELECT | LVS_EX_CHECKBOXES | LVS_EX_INFOTIP );
 
 			/* Initialise the columns of the list control */
 			{
@@ -459,7 +453,7 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 				{
 					const LONG CharWidth = [hList]()
 					{
-						HDC hDC = GetDC( hList );
+							HDC hDC = GetDC( hList );
 
 						// Don't use tmAveCharWidth. See https://devblogs.microsoft.com/oldnewthing/20221103-00/?p=107350
 						constexpr static const char AllLetters[]{ "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" };
@@ -532,13 +526,14 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 							/* Check hard disks and removable ones like ZIP drives (unfortunately, this includes floppys too) */
 							if ( ( DRIVE_FIXED == drivetype ) /*|| ( DRIVE_REMOVABLE == drivetype )*/ )
 							{
-								UpdateDriveInformation( hList, Item, dNum, pDrive );
+								InsertDriveDataIntoListControl( hList, Item, dNum, pDrive );
+								UpdateDriveInformation( hList, Item );
 
 								Item++;
 							}
 
 							/* Next drive letter */
-							pDrive = &pDrive[ lstrlen( pDrive ) + 1 ]; //-V108
+							pDrive = &pDrive[lstrlen( pDrive ) + 1]; //-V108
 						}
 					}
 
@@ -597,12 +592,12 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 
 		case WM_TIMER:
 			{
-				const HWND hList = GetDlgItem( hDlg, IDC_LIST );
+			const HWND hList = GetDlgItem( hDlg, IDC_LIST );
 				/* Update the list control items */
-				const int NumItems = ListView_GetItemCount( hList );
+			const int NumItems = ListView_GetItemCount( hList );
 				for ( int indx = 0; indx < NumItems; indx++ )
 				{
-					UpdateDriveInformation( hList, indx, 0, nullptr );
+					UpdateDriveInformation( hList, indx );
 				}
 			}
 			return TRUE;
@@ -623,7 +618,7 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 						{
 							const BOOL bState = ListView_GetCheckState( phdr->hwndFrom, plv->iItem );
 							CModDlgParams * mp = reinterpret_cast<CModDlgParams *>( plv->lParam );
-							g_DriveConfig[ mp->DriveNum  ].bCheckMe = bState ? true: false;
+							g_DriveConfig[mp->DriveNum].bCheckMe = bState ? true : false;
 
 							/* Set the modified flag */
 							g_bModified = true;
@@ -676,9 +671,9 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 		// The Modify button
 		case IDOK:
 			{
-				const HWND hList = GetDlgItem( hDlg, IDC_LIST );
+			const HWND hList = GetDlgItem( hDlg, IDC_LIST );
 
-				const int SelItem = ListView_GetNextItem( hList, -1, LVNI_SELECTED );	//-V2005
+			const int SelItem = ListView_GetNextItem( hList, -1, LVNI_SELECTED );	//-V2005
                 if ( SelItem != -1 )
                 {
 					LVITEM lvi;
@@ -690,10 +685,10 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
                     if ( IDOK == DialogBoxParam( g_hResInst, MAKEINTRESOURCE( IDD_MOD_DLG ), hDlg, ModifyDlg, reinterpret_cast<LPARAM>( mp ) ) )
 					{
 						/* Modified value returned - copy alarm value to global settings */
-						g_DriveConfig[ mp->DriveNum ].AlarmAt = mp->AlarmThreshold;
+						g_DriveConfig[mp->DriveNum].AlarmAt = mp->AlarmThreshold;
 
 						/* Update list display */
-						UpdateDriveInformation( hList, SelItem, 0, nullptr );
+						UpdateDriveInformation( hList, SelItem );
 
 						/* Set the modified flag */
 						g_bModified = true;
