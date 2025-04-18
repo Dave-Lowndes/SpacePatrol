@@ -342,7 +342,7 @@ static INT_PTR CALLBACK ModifyDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			{
 				UpdateSizeDescription( hDlg );
 
-				return true;
+				return TRUE;
 			}
 			break;
 
@@ -351,7 +351,7 @@ static INT_PTR CALLBACK ModifyDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			{
 				UpdateSizeDescription( hDlg );
 
-				return true;
+				return TRUE;
 			}
 			break;
 		}
@@ -628,7 +628,7 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			case NM_DBLCLK:
 				/* Do the same as single click and the default operation - Modify */
 				PostMessage( hDlg, WM_COMMAND, IDOK, 0 );
-				break;
+				return TRUE;
 
 			default:
 				break;
@@ -666,7 +666,7 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 					}
 				}
 			}
-			break;
+			return TRUE;
 
 		case IDC_DISABLE_OS:
 			if ( HIWORD( wParam ) == BN_CLICKED )
@@ -781,7 +781,7 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 					_ASSERT( false );
 				}
 			}
-			break;
+			return TRUE;
 
 		case IDCANCEL:
 			if ( !g_bModified || ( ResMessageBox( hDlg, IDS_UNSAVED_PROMPT, szAppName,
@@ -813,7 +813,7 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 
 				ShellExecute( hDlg, NULL, HelpPath.c_str(), NULL, NULL, SW_NORMAL);
 			}
-			break;
+			return TRUE;
 		}
 		break;
 
