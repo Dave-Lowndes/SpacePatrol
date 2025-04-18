@@ -175,6 +175,9 @@ static void HandleDiskSpaceBelowThreshold( ULONGLONG UserFree, NOTIFYICONDATA& n
 			/* It's expired, refresh it unless the user has prevented the updating for this drive. */
 			if ( !(g_bNoRefreshTip & (1 << dNum)) )
 			{
+				// Don't beep in this situation - limit annoying the user
+				nid.dwInfoFlags |= NIIF_NOSOUND;
+
 				if ( Shell_NotifyIcon( NIM_MODIFY, &nid ) )
 				{
 					/* added OK */
