@@ -33,37 +33,6 @@ IDI_SPACECON            ICON                    "SpaceCon.ico"
 IDI_SMALL               ICON                    "small.ico"
 
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// Menu
-//
-
-IDC_SPACECON MENU
-BEGIN
-    POPUP "&File"
-    BEGIN
-        MENUITEM "Configure...",                ID_CONFIG
-        MENUITEM "E&xit",                       IDM_EXIT
-    END
-    POPUP "&Help"
-    BEGIN
-        MENUITEM "&About ...",                  IDM_ABOUT
-    END
-END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Accelerator
-//
-
-IDC_SPACECON ACCELERATORS
-BEGIN
-    "?",            IDM_ABOUT,              ASCII,  ALT
-    "/",            IDM_ABOUT,              ASCII,  ALT
-END
-
-
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -147,25 +116,6 @@ IDI_ICON1               ICON                    "ICON1.ICO"
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Menu
-//
-
-IDR_CTXT_MENU MENU
-BEGIN
-    POPUP "Dummy"
-    BEGIN
-        MENUITEM "Run Disk Cleanup",            ID_INVOKEDISKCLEANUP
-        MENUITEM "Run Explorer",                ID_RUNEXPLORER
-        MENUITEM "Configure...",                ID_CONFIG
-        MENUITEM SEPARATOR
-        MENUITEM "About...",                    IDM_ABOUT
-        MENUITEM "Exit",                        ID_EXITSPACECONTROL
-    END
-END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
 // Dialog
 //
 
@@ -206,29 +156,6 @@ BEGIN
     EDITTEXT        IDC_DRIVE_FREE,52,35,63,12,ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER
 END
 
-IDD_ABOUT DIALOGEX 40, 10, 220, 175
-STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
-CAPTION "About"
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
-BEGIN
-    LTEXT           "&Name",IDC_STATIC,31,138,20,8
-    EDITTEXT        IDC_REG_NAME,82,135,132,14,ES_AUTOHSCROLL
-    LTEXT           "&Registration #",IDC_STATIC,31,156,45,8
-    EDITTEXT        IDC_REG_NUM,82,153,132,14,ES_AUTOHSCROLL
-    ICON            IDI_ICON1,IDC_STATIC,7,7,20,20
-    LTEXT           "File Description",IDC_FILE_DESC,31,8,128,8
-    LTEXT           "Version",IDC_STATIC,31,22,24,8
-    LTEXT           "1.2.3",IDC_VERSION,62,22,30,8
-    LTEXT           "Copyright",IDC_COPYRIGHT,31,36,128,8
-    DEFPUSHBUTTON   "OK",IDOK,164,6,50,14,WS_GROUP
-    LTEXT           "Email",IDC_EMAILUS,31,51,174,8,SS_NOTIFY | SS_CENTERIMAGE | WS_TABSTOP
-    LTEXT           "Check for Updates",IDC_CHECK_FOR_UPDATE,31,63,175,8,SS_NOTIFY | WS_TABSTOP
-    LTEXT           "Web Site",IDC_WEB_HOME,31,75,30,8,SS_NOTIFY | WS_TABSTOP
-    LTEXT           "Registered to:",IDC_REG_TO_TXT,31,91,47,8
-    LTEXT           "UNREGISTERED",IDC_REG_USER,83,91,126,8,SS_NOPREFIX
-    LTEXT           "When you have registered, please enter your name and registration number EXACTLY in the following fields and press OK",IDC_REG_MSG,31,105,182,25
-END
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -252,11 +179,6 @@ BEGIN
         RIGHTMARGIN, 188
         TOPMARGIN, 7
         BOTTOMMARGIN, 84
-    END
-
-    IDD_ABOUT, DIALOG
-    BEGIN
-        BOTTOMMARGIN, 167
     END
 END
 #endif    // APSTUDIO_INVOKED

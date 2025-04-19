@@ -5,8 +5,6 @@
 #define IDS_APP_TITLE                   103
 #define IDM_ABOUT                       104
 #define IDS_RECOMEND_VERY_LOW           104
-#define IDD_ABOUT                       104
-#define IDM_EXIT                        105
 #define IDS_RECOMEND_BELOW_THRESHOLD    105
 #define IDS_RECOMEND_NEAR_THRESHOLD     106
 #define IDI_SPACECON                    107
@@ -23,10 +21,8 @@
 #define IDS_RECOMMEND                   119
 #define IDS_RECOMMEND_FREE_SPACE        120
 #define IDS_CLOSE_FOR_REG               122
-#define ID_CONFIG                       129
 #define IDD_CONFIG_DLG                  130
 #define IDD_MOD_DLG                     131
-#define IDR_CTXT_MENU                   133
 #define IDR_VALS                        133
 #define IDI_ICON1                       134
 #define IDC_LIST                        1001
@@ -37,24 +33,10 @@
 #define IDC_DRIVE_SIZE                  1006
 #define IDC_DRIVE_FREE                  1007
 #define IDC_ALARMAT                     1008
-#define IDC_FILE_DESC                   1008
 #define IDC_DISABLE_OS                  1009
-#define IDC_COPYRIGHT                   1009
 #define IDC_PRESET                      1010
-#define IDC_VERSION                     1010
 #define IDC_COMBO_SIZE_UNITS            1011
 #define IDC_SIZE_DESC                   1013
-#define IDC_CHECK_FOR_UPDATE            1067
-#define IDC_WEB_HOME                    1068
-#define IDC_REG_USER                    1073
-#define IDC_REG_NUM                     1074
-#define IDC_REG_NAME                    1077
-#define IDC_REG_TO_TXT                  1079
-#define IDC_REG_MSG                     1080
-#define IDC_EMAILUS                     1087
-#define ID_INVOKEDISKCLEANUP            32775
-#define ID_EXITSPACECONTROL             32777
-#define ID_RUNEXPLORER                  32780
 #define IDC_STATIC                      -1
 
 // Next default values for new objects

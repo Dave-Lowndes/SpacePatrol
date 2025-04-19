@@ -2,11 +2,9 @@
 // Microsoft Visual C++ generated include file.
 // Used by SPMonitor.rc
 //
-#define IDOK                            1
 #define IDD_SPMONITOR_DIALOG            102
 #define IDS_APP_TITLE                   103
 #define IDM_ABOUT                       104
-#define IDD_ABOUT                       104
 #define IDM_EXIT                        105
 #define IDI_SPMONITOR                   107
 #define IDS_TT_INFO_FMT                 108
@@ -21,17 +19,6 @@
 #define ID_CONFIG                       129
 #define IDR_CTXT_MENU                   133
 #define IDI_ICON1                       134
-#define IDC_FILE_DESC                   1008
-#define IDC_COPYRIGHT                   1009
-#define IDC_VERSION                     1010
-#define IDC_CHECK_FOR_UPDATE            1067
-#define IDC_WEB_HOME                    1068
-#define IDC_REG_USER                    1073
-#define IDC_REG_NUM                     1074
-#define IDC_REG_NAME                    1077
-#define IDC_REG_TO_TXT                  1079
-#define IDC_REG_MSG                     1080
-#define IDC_EMAILUS                     1087
 #define ID_INVOKEDISKCLEANUP            32775
 #define ID_EXITSPACECONTROL             32777
 #define ID_RUNEXPLORER                  32780

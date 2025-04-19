@@ -841,12 +841,19 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			}
 
 		case IDC_ABOUT:
-			/* Invoke the about code from the parent window */
 			{
-				HWND hWnd = GetParent( hDlg );
+				AboutHandler( hDlg,
+					g_RegData,
+					g_hResInst,
+					szAppName,
+					L"Thanks for using Space Patrol",
+					szRegistryKey,
+					g_hInstance,
+					ProductCode::SpacePatrol,
+					IDS_CLOSE_FOR_REG );
 
-				/* Invoke the command, but have it use our window as the parent */
-				PostMessage( hWnd, WM_COMMAND, IDM_ABOUT, reinterpret_cast<LPARAM>( hDlg ) );
+				/* Restart any running monitor instances so they get the registration changes */
+				PulseEvent( g_hEvents[EVT_RESTARTMONITORS] );
 			}
 			return TRUE;
 
@@ -865,111 +872,7 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 	return FALSE;
 }
 
-//  FUNCTION: WndProc(HWND, unsigned, WORD, LONG)
-//
-//  PURPOSE:  Processes messages for the main window.
-static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	switch (message) 
-	{
-	case WM_COMMAND:
-		{
-			const int wmId = LOWORD( wParam );
-			static bool bInHere = false;
-			// Parse the menu selections:
-			switch ( wmId )
-			{
-			case ID_CONFIG:
-				if ( !bInHere )
-				{
-					bInHere = true;
-					DialogBox( g_hResInst, MAKEINTRESOURCE( IDD_CONFIG_DLG ), hWnd, ConfigDlg );
-	#ifndef _DEBUG
-					PostMessage( hWnd, WM_CLOSE, 0, 0 );
-	#endif
-					bInHere = false;
-				}
-				else
-				{
-					//				::BringWindowToTop( hWnd );
-				}
-				break;
-
-			case IDM_ABOUT:
-			{
-				HWND hParent;
-
-				/* If the message is sent from the config dialog, lParam is the window handle that should be the parent */
-				if ( lParam == NULL )
-				{
-					/* No explicit parent - so just use this window */
-					hParent = hWnd;
-				}
-				else
-				{
-					hParent = reinterpret_cast<HWND>( lParam );
-				}
-
-				AboutHandler( hParent,
-					g_RegData,
-					g_hResInst,
-					szAppName,
-					L"Thanks for using Space Patrol",
-					szRegistryKey,
-					g_hInstance,
-					ProductCode::SpacePatrol,
-					IDS_CLOSE_FOR_REG );
-
-				/* Restart any running monitor instances so they get the registration changes */
-				PulseEvent( g_hEvents[EVT_RESTARTMONITORS] );
-			}
-			break;
-
-			case IDM_EXIT:
-				DestroyWindow( hWnd );
-				break;
-
-			default:
-				return DefWindowProc( hWnd, message, wParam, lParam );
-			}
-		}
-		break;
-
-	case WM_DESTROY:
-		PostQuitMessage(0);
-		break;
-
-	default:
-		return DefWindowProc(hWnd, message, wParam, lParam);
-	}
-	return 0;
-}
-
-//  FUNCTION: MyRegisterClass()
-//
-//  PURPOSE: Registers the window class.
-static ATOM MyRegisterClass(HINSTANCE hInstance) noexcept
-{
-	WNDCLASSEX wcex;
-
-	wcex.cbSize = sizeof(WNDCLASSEX); 
-
-	wcex.style			= CS_HREDRAW | CS_VREDRAW;
-	wcex.lpfnWndProc	= WndProc;
-	wcex.cbClsExtra		= 0;
-	wcex.cbWndExtra		= 0;
-	wcex.hInstance		= hInstance;
-	wcex.hIcon			= LoadIcon(hInstance, (LPCTSTR)IDI_SPACECON);
-	wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
-	wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
-	wcex.lpszMenuName	= MAKEINTRESOURCE(IDC_SPACECON);
-	wcex.lpszClassName	= szWindowClass;
-	wcex.hIconSm		= (HICON) LoadImage( wcex.hInstance, MAKEINTRESOURCE( IDI_SPACECON ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR );
-
-	return RegisterClassEx(&wcex);
-}
-
-static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
+static BOOL InitInstance(HINSTANCE hInstance)
 {
 	g_hResInst = g_hInstance = hInstance; // Store instance handle in our global variable
 // Not necessary as no separate resource DLL is used	_AtlBaseModule.SetResourceInstance( g_hResInst );
@@ -1003,24 +906,6 @@ static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	/* Load the settings from the registry */
 	LoadGlobalSettingsFromReg();
 
-	HWND hWnd = CreateWindow(szWindowClass, szAppName, WS_OVERLAPPEDWINDOW,
-							CW_USEDEFAULT, CW_USEDEFAULT, 350, 100, NULL, NULL, hInstance, NULL);
-
-	if (!hWnd)
-	{
-		return FALSE;
-	}
-
-#ifdef _DEBUG
-	ShowWindow(hWnd, nCmdShow);
-	UpdateWindow(hWnd);
-#else
-	nCmdShow;	// Prevent compiler warning
-#endif
-
-	/* Display the main UI dialog */
-	PostMessage( hWnd, WM_COMMAND, ID_CONFIG, 0 );
-
 	return TRUE;
 }
 
@@ -1034,31 +919,15 @@ int WINAPI wWinMain(
 	/* Debug version memory leak checking */
 	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 
-	MSG msg;
-	HACCEL hAccelTable;
-
 	// Initialize global strings
 	std::ignore = szAppName.LoadString( hInstance, IDS_APP_TITLE );
 
-	MyRegisterClass(hInstance);
-
 	// Perform application initialization:
-	if (!InitInstance (hInstance, nShowCmd)) 
+	if ( !InitInstance( hInstance ) ) 
 	{
 		return FALSE;
 	}
 
-	hAccelTable = LoadAccelerators(hInstance, (LPCTSTR)IDC_SPACECON);
-
-	// Main message loop:
-	while (GetMessage(&msg, NULL, 0, 0)) 
-	{
-		if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg)) 
-		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-	}
-
-	return static_cast<int>( msg.wParam );
+	DialogBox( g_hResInst, MAKEINTRESOURCE( IDD_CONFIG_DLG ), NULL, ConfigDlg );
+	return 0;
 }
