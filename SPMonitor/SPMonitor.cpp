@@ -295,7 +295,7 @@ static void HandleMonitorTimer( HWND hWnd )
 
 static TCHAR g_szMBCaption[100];
 
-static void CALLBACK MessageBoxTimer(HWND /*hwnd*/, UINT /*uiMsg*/, UINT /*idEvent*/, DWORD /*dwTime*/) noexcept
+static void CALLBACK MessageBoxTimer(HWND /*hwnd*/, UINT /*uiMsg*/, UINT_PTR /*idEvent*/, DWORD /*dwTime*/) noexcept
 {
 #if 0
 	/* This technique doesn't work under Vista when the messagebox has focus - the whole app closes! */

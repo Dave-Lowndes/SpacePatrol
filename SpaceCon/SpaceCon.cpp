@@ -650,7 +650,7 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 					}
 
 					/* We've processed this message and don't need the individual delete messages */
-					SetWindowLong( hDlg, DWL_MSGRESULT, TRUE );
+					SetWindowLongPtr( hDlg, DWLP_MSGRESULT, TRUE );
 					return TRUE;
 				}
 
