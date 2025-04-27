@@ -125,11 +125,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="SpacePatrol.hpj">
-      <Filter>Source Files</Filter>
-    </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
     <Image Include="..\ReadMe\Notification on Win10-1.png">
       <Filter>Readme</Filter>
     </Image>
