@@ -6,15 +6,16 @@
 #include <atlstr.h>
 #include <Shellapi.h>
 #include <windowsx.h>
-#include <optional>
+#include <bitset>
 #include <chrono>
-#include <vector>
 #include <filesystem>
+#include <optional>
+#include <vector>
 
-using std::optional;
-using std::vector;
 using namespace std::chrono_literals;
 using std::filesystem::path;
+using std::optional;
+using std::vector;
 
 #include "SPMonitor.h"
 #include "CheckForUpdate.h"
@@ -49,9 +50,9 @@ static HANDLE g_hNotifyThread;	// Thread handle of the notification thread that 
 static HANDLE g_hMonitorInstance;	// Event handle to ensure only a single instance of the monitoring process (per desktop)
 
 /* This records which drive taskbar icons are displayed (it's 1 bit per disk drive) */
-static DWORD g_DriveIconDisplayed = 0;
+static std::bitset<26> g_DriveIconDisplayed;
 // Similarly, this records which drives the user doesn't want to be reminded of
-static DWORD g_bNoRefreshTip;
+static std::bitset<26> g_bNoRefreshTip;
 
 constexpr auto AMEGABYTE{ 1024 * 1024 };
 
@@ -134,13 +135,13 @@ static void HandleDiskSpaceBelowThreshold( ULONGLONG UserFree, NOTIFYICONDATA& n
 #pragma warning( push )
 
 	/* Are we already displaying this drive's icon? */
-	if ( !(g_DriveIconDisplayed & (1 << dNum)) )
+	if ( !g_DriveIconDisplayed[dNum] )
 	{
+		// No, add the icon to the taskbar
+
 		/* Display the notification icon */
 		nid.uFlags |= NIF_ICON | NIF_TIP | NIF_MESSAGE;
-
 		nid.uCallbackMessage = UWM_TIPNOTIFY;
-
 		nid.hIcon = (HICON) LoadImage( g_hInstance, MAKEINTRESOURCE( IDI_SMALL ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR );
 
 		// "JD Design Space Patrol: Low disk space on drive %c: %s"
@@ -152,28 +153,33 @@ static void HandleDiskSpaceBelowThreshold( ULONGLONG UserFree, NOTIFYICONDATA& n
 			/* Record when this icon appears so we can refresh the balloon tooltip after a longer delay */
 			DriveNI[dNum].LastDisplayedTime = tcNow;
 
-			/* Indicate that we're displaying the icon for this drive */
-			g_DriveIconDisplayed |= (1 << dNum);
-
 			/* Set the initial redisplay period */
 			DriveNI[dNum].RedisplayPeriod = INITIAL_REDISPLAY_TIME;
 
+			/* Indicate that we're displaying the icon for this drive */
+			g_DriveIconDisplayed[dNum] = true;
+
 			/* We initially want to remind the user by refreshing this tip */
-			g_bNoRefreshTip &= ~(1 << dNum);
+			g_bNoRefreshTip[dNum] = false;
 		}
 		else
 		{
-			/* Failed to add icon */
-			MessageBeep( MB_OK );
+			// Failed to add icon.
+
+			// Since Windows 10, this branch occurs if the primary monitor DPI
+			// changes; the TaskbarCreated message is sent but the icons still
+			// exist, so set our flag appropriately so the next time through
+			// here, we'll do the else branch.
+			g_DriveIconDisplayed[dNum] = true;
 		}
 	}
 	else
 	{
-		/* Already displaying, has the time period expired for a refresh? */
+		/* Already displaying; has the time period expired for a refresh? */
 		if ( tcNow - DriveNI[dNum].LastDisplayedTime >= DriveNI[dNum].RedisplayPeriod )
 		{
 			/* It's expired, refresh it unless the user has prevented the updating for this drive. */
-			if ( !(g_bNoRefreshTip & (1 << dNum)) )
+			if ( !g_bNoRefreshTip[dNum] )
 			{
 				// Don't beep in this situation - limit annoying the user
 				nid.dwInfoFlags |= NIIF_NOSOUND;
@@ -218,7 +224,7 @@ static void MonitorDiskSpace( LPTSTR pDrive, NOTIFYICONDATA& nid )
 		else
 		{
 			/* Are we displaying this drive's icon? */
-			if ( (g_DriveIconDisplayed & (1 << dNum)) )
+			if ( g_DriveIconDisplayed[dNum] )
 			{
 				/* Remove it */
 				if ( Shell_NotifyIcon( NIM_DELETE, &nid ) )
@@ -226,7 +232,7 @@ static void MonitorDiskSpace( LPTSTR pDrive, NOTIFYICONDATA& nid )
 					/* OK */
 
 					/* Indicate that we're not displaying the icon for this drive */
-					g_DriveIconDisplayed &= ~(1 << dNum);
+					g_DriveIconDisplayed[dNum] = false;
 				}
 				else
 				{
@@ -506,7 +512,10 @@ static UINT g_TaskBarCreated = 0;
 	if ( message == g_TaskBarCreated )
 	{
 		/* Assume all our icons have been lost and need to be created again */
-		g_DriveIconDisplayed = 0;
+		// As of Windows 10, this message is also sent when the primary monitor DPI
+		// changes, but the taskbar icons are not lost. Therefore we have to handle
+		// this scenario too.
+		g_DriveIconDisplayed.reset();
 	}
 	else
 	switch (message)
@@ -613,12 +622,15 @@ static UINT g_TaskBarCreated = 0;
 			nid.hWnd = hWnd;
 			nid.uFlags = 0;
 
-			for ( int dNum = 0; dNum < 26; dNum++ )
+			for ( nid.uID = 0; nid.uID < g_DriveIconDisplayed.size(); ++nid.uID )
 			{
 				/* Are we displaying an icon for this drive? */
-				if ( ( g_DriveIconDisplayed & (1 << dNum ) ) )
+//				if ( g_DriveIconDisplayed[nid.uID] )
+// 
+				// Because there's a chance that the icon is still being
+				// displayed, but not identified as such, just delete all
+				// possible icons.
 				{
-					nid.uID = dNum;
                     Shell_NotifyIcon( NIM_DELETE, &nid );
 				}
 			}
@@ -787,7 +799,7 @@ static UINT g_TaskBarCreated = 0;
 				/* User has clicked the balloon tooltip */
 				if ( IDYES == ResMessageBox( hWnd, IDS_NO_LONGER_REMIND, g_AppName, MB_ICONQUESTION | MB_YESNO ) )
 				{
-					g_bNoRefreshTip |= 1 << DriveNum;
+					g_bNoRefreshTip[DriveNum] = true;
 				}
 				break;
 
