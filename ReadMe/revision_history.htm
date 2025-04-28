@@ -41,6 +41,32 @@ h4
 <body>
 
 	<h1>Space Patrol Revision History</h1>
+	<h4>V2.5.0.0&nbsp;&nbsp;&nbsp; 1 May 2025</h4>
+	<p>
+		Work-around for a change in Windows 10 that issues the "TaskbarCreated"
+		notification when the primary monitor's DPI is changed.
+		This caused failure when re-adding the notification icon, giving rise to an audible beep.
+	</p>
+	<p>
+		Fix for the situation when removing the notification icon may randomly
+		fail, giving rise to an audible beep.
+	</p>
+	<p>
+		Enhanced the "Modify Notification Threshold" dialog to allow entry in
+		either MB or GB.
+	</p>
+	<p>Enable/Disable the Apply button appropriately.</p>
+	<p>
+		Periodically refresh the drive list items to reflect any changes to disk
+		space that occur.
+	</p>
+	<p>Show a tooltip for any partially shown text in the drives list.</p>
+	<p>Suppress audible beep when subsequently updating the notification icon.</p>
+	<p>
+		The Configure Space Patrol program is now per-monitor Hi-DPI aware so that moving it across different DPI
+		monitors maintains an optimal window size.
+	</p>
+	<p>Update documentation URLs.</p>
 	<h4>V2.4.1.0&nbsp;&nbsp;&nbsp; 10 January 2023</h4>
 	<p>Updated email contact information.</p>
 	<p>Internal code changes.</p>
