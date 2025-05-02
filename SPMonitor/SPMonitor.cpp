@@ -6,6 +6,8 @@
 #include <atlstr.h>
 #include <Shellapi.h>
 #include <windowsx.h>
+#include <CommCtrl.h>
+#pragma comment(lib, "comctl32.lib")
 #include <bitset>
 #include <chrono>
 #include <filesystem>
@@ -48,6 +50,9 @@ static HANDLE g_hNotifyThread;	// Thread handle of the notification thread that 
 #define EXPLORER_VAL _T("NoLowDiskSpaceChecks")
 
 static HANDLE g_hMonitorInstance;	// Event handle to ensure only a single instance of the monitoring process (per desktop)
+
+// The taskbar icon for the disk drive
+static HICON g_DiskDriveIcon;
 
 /* This records which drive taskbar icons are displayed (it's 1 bit per disk drive) */
 static std::bitset<26> g_DriveIconDisplayed;
@@ -142,7 +147,6 @@ static void HandleDiskSpaceBelowThreshold( ULONGLONG UserFree, NOTIFYICONDATA& n
 		/* Display the notification icon */
 		nid.uFlags |= NIF_ICON | NIF_TIP | NIF_MESSAGE;
 		nid.uCallbackMessage = UWM_TIPNOTIFY;
-		nid.hIcon = (HICON) LoadImage( g_hInstance, MAKEINTRESOURCE( IDI_SMALL ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR );
 
 		// "JD Design Space Patrol: Low disk space on drive %c: %s"
 		_stprintf( nid.szTip, g_TipFmtString, _T( 'A' ) + dNum, static_cast<LPCTSTR>(szSpaceRemainingW) );	//-V111
@@ -270,6 +274,8 @@ static void HandleMonitorTimer( HWND hWnd )
 	nid.cbSize = sizeof( nid );
 	nid.hWnd = hWnd;
 	nid.uFlags = 0;
+	// Use the current icon
+	nid.hIcon = g_DiskDriveIcon;
 
 	WORD dNum;
 	/* Loop for all disk drives on the system */
@@ -413,10 +419,28 @@ static unsigned int __stdcall MonitorChangesThread( void * param ) noexcept
 	return 0;
 }
 
+static void LoadOptimalDriveIcon()
+{
+	// Load the icon in the Hi-DPI aware manner
+	if ( LoadIconMetric( g_hInstance, MAKEINTRESOURCE( IDI_SMALL ), LIM_SMALL, &g_DiskDriveIcon ) == S_OK )
+	{
+		if ( g_DiskDriveIcon != NULL )
+		{
+			// All OK
+			return;
+		}
+	}
+
+	// Shouldn't happen
+	_ASSERT( false );
+}
+
 static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) noexcept
 {
 	g_hResInst = g_hInstance = hInstance; // Store instance handle in our global variable
 // Not necessary as no separate resource DLL is used	_AtlBaseModule.SetResourceInstance( g_hResInst );
+
+	LoadOptimalDriveIcon();
 
 	g_RegData = GetMyRegistrationFromTheRegistry( szRegistryKey );
 
@@ -500,6 +524,27 @@ static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) noexcept
 	return TRUE;
 }
 
+static void RemoveAllMyNotificationIcons( HWND hWnd )
+{
+	NOTIFYICONDATA nid;
+	nid.cbSize = sizeof( nid );
+	nid.hWnd = hWnd;
+	nid.uFlags = 0;
+
+	for ( nid.uID = 0; nid.uID < g_DriveIconDisplayed.size(); ++nid.uID )
+	{
+		/* Are we displaying an icon for this drive? */
+//				if ( g_DriveIconDisplayed[nid.uID] )
+// 
+				// Because there's a chance that the icon is still being
+				// displayed, but not identified as such, just delete all
+				// possible icons.
+		{
+			Shell_NotifyIcon( NIM_DELETE, &nid );
+		}
+	}
+}
+
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
 //
 //  PURPOSE:  Processes messages for the main window.
@@ -512,10 +557,20 @@ static UINT g_TaskBarCreated = 0;
 	if ( message == g_TaskBarCreated )
 	{
 		/* Assume all our icons have been lost and need to be created again */
-		// As of Windows 10, this message is also sent when the primary monitor DPI
-		// changes, but the taskbar icons are not lost. Therefore we have to handle
-		// this scenario too.
+		// As of Windows 10, this message is also sent when the primary monitor
+		// DPI changes, but the taskbar icons are not lost. Therefore we have
+		// to handle this scenario too.
 		g_DriveIconDisplayed.reset();
+
+		// Remove any current icons as this message is also sent for DPI
+		// changes, we may need to get an updated icon.
+		RemoveAllMyNotificationIcons( hWnd );
+
+		DestroyIcon( g_DiskDriveIcon );
+		LoadOptimalDriveIcon();
+
+		// Get a refresh done quickly to reinstate any icons that were present before
+		SetTimer( hWnd, 1, 1 * 1000, NULL );
 	}
 	else
 	switch (message)
@@ -616,25 +671,7 @@ static UINT g_TaskBarCreated = 0;
 
 	case WM_DESTROY:
 		/* Remove the icons for any items we may be showing */
-		{
-			NOTIFYICONDATA nid;
-			nid.cbSize = sizeof( nid );
-			nid.hWnd = hWnd;
-			nid.uFlags = 0;
-
-			for ( nid.uID = 0; nid.uID < g_DriveIconDisplayed.size(); ++nid.uID )
-			{
-				/* Are we displaying an icon for this drive? */
-//				if ( g_DriveIconDisplayed[nid.uID] )
-// 
-				// Because there's a chance that the icon is still being
-				// displayed, but not identified as such, just delete all
-				// possible icons.
-				{
-                    Shell_NotifyIcon( NIM_DELETE, &nid );
-				}
-			}
-		}
+		RemoveAllMyNotificationIcons( hWnd );
 
 		/* Notify the wait thread to exit */
 		SetEvent( g_hEvents[EVT_EXITTHREAD] );
