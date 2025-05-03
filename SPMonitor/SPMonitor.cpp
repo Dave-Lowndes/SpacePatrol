@@ -305,6 +305,7 @@ static void HandleMonitorTimer( HWND hWnd )
 	}
 }
 
+#if 0
 static TCHAR g_szMBCaption[100];
 
 static void CALLBACK MessageBoxTimer(HWND /*hwnd*/, UINT /*uiMsg*/, UINT_PTR /*idEvent*/, DWORD /*dwTime*/) noexcept
@@ -368,7 +369,7 @@ static int ResTimedMessageBox( HWND hWnd, int ResId, LPCTSTR pCaption, const int
 		return MB_OK;
 	}
 }
-
+#endif
 static unsigned int __stdcall MonitorChangesThread( void * param ) noexcept
 {
 	/* I pass the main (invisible) window handle to the thread */
