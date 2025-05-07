@@ -902,7 +902,7 @@ int WINAPI wWinMain(
 		return FALSE;
 	}
 
-	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_SPMONITOR));
+	HACCEL hAccelTable = LoadAccelerators( hInstance, MAKEINTRESOURCE( IDC_SPMONITOR ) );
 
 	// Main message loop:
 	MSG msg;

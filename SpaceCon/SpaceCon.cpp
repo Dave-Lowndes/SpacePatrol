@@ -590,17 +590,17 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 		}
 		return TRUE;
 
-		case WM_TIMER:
+	case WM_TIMER:
+		{
+			const HWND hList = GetDlgItem( hDlg, IDC_LIST );
+			/* Update the list control items */
+			const int NumItems = ListView_GetItemCount( hList );
+			for ( int indx = 0; indx < NumItems; indx++ )
 			{
-				const HWND hList = GetDlgItem( hDlg, IDC_LIST );
-				/* Update the list control items */
-				const int NumItems = ListView_GetItemCount( hList );
-				for ( int indx = 0; indx < NumItems; indx++ )
-				{
-					UpdateDriveInformation( hList, indx );
-				}
+				UpdateDriveInformation( hList, indx );
 			}
-			return TRUE;
+		}
+		return TRUE;
 
 	case WM_NOTIFY:
 		{
