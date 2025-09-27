@@ -101,14 +101,13 @@ BEGIN
     IDS_APP_TITLE           "Space Patrol Monitor"
     IDS_TT_INFO_FMT         "You are running out of disk space on drive %c.\r\nIt only has %s free."
     IDC_SPMONITOR           "JD_Design_SPMONITOR_wndClass"
-    IDS_TT_TIP_FMT          "JD Design Space Patrol: Low disk space on drive %c: %s"
+    IDS_TT_TIP_FMT          "Space Patrol: Low disk space on drive %c: %s"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_NOT_AVAIL           "A non-registered version does not automatically monitor your disk space when restarting.\n\nYou need to run the ""Configure Space Patrol"" menu item and re-apply the saved settings."
     IDS_NO_LONGER_REMIND    "Do you want to stop seeing this reminder for now?"
-    IDS_CLOSE_FOR_REG       "If you've entered your registration details, close the SpaceCon dialog to have the changes take effect"
+    IDS_CLOSE_FOR_REG       "If you've entered your registration details, close the Space Patrol dialog to have the changes take effect"
     IDS_LDS_CAPTION         "Space Patrol - Low Disk Space"
 END
 
