@@ -200,8 +200,18 @@ static void HandleDiskSpaceBelowThreshold( ULONGLONG UserFree, NOTIFYICONDATA& n
 				}
 				else
 				{
-					/* Failed to add icon */
-					MessageBeep( MB_OK );
+#ifdef _DEBUG
+					const auto errVal = GetLastError();
+					if ( errVal == ERROR_TIMEOUT )
+					{
+						// This particular error occurs after hibernate/restore - ignore it
+					}
+					else
+					{
+						/* Failed to add icon */
+						MessageBeep( MB_OK );
+					}
+#endif
 				}
 			}
 		}
@@ -240,12 +250,16 @@ static void MonitorDiskSpace( LPTSTR pDrive, NOTIFYICONDATA& nid )
 				}
 				else
 				{
-					//auto hr = GetLastError();
-					//CString strError;
-					//strError.Format( _T( "Failed to remove icon: %d" ), hr );
-					//OutputDebugString( strError );
+#ifdef DEBUG
+					auto hr = GetLastError();
+					std::wstring strError = std::format( L"Failed to remove icon for drive: {}: error: {}\n", pDrive, hr );
+					OutputDebugString( strError.c_str() );
+#endif
 					/* Failed to remove icon */
 					MessageBeep( MB_OK );
+
+					// Clear the flag to prevent the beep re-occurring
+					g_DriveIconDisplayed[dNum] = false;
 				}
 			}
 		}
