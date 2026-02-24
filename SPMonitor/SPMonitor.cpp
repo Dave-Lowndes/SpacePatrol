@@ -849,7 +849,12 @@ static UINT g_TaskBarCreated = 0;
 
 			case NIN_BALLOONUSERCLICK:
 				/* User has clicked the balloon tooltip */
-				if ( IDYES == ResMessageBox( hWnd, IDS_NO_LONGER_REMIND, g_AppName, MB_ICONQUESTION | MB_YESNO ) )
+				// Identify which drive this is for
+				CString strMsg;
+				std::ignore = strMsg.LoadString(IDS_NO_LONGER_REMIND);
+				strMsg.Format(strMsg, _T('A') + DriveNum);
+
+				if ( IDYES == MessageBox( hWnd, strMsg, g_AppName, MB_ICONQUESTION | MB_YESNO ) )
 				{
 					g_bNoRefreshTip[DriveNum] = true;
 				}
