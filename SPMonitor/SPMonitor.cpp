@@ -80,7 +80,7 @@ static void LoadResourceStringSpan( HINSTANCE hInstance, UINT uID, std::span<TCH
 #if _DEBUG
 	const int NumCharsLoaded =
 #endif
-		LoadString( hInstance, uID, Buffer.data(), Buffer.size() );	//-V530
+		LoadString( hInstance, uID, Buffer.data(), Buffer.size() );	//-V530 //-V107
 	// Resource string must be present
 	_ASSERT( NumCharsLoaded != 0 );
 }
@@ -391,7 +391,7 @@ static unsigned int __stdcall MonitorChangesThread( void * param ) noexcept
 
 	bool bExit = false;
 
-	do
+	do	//-V1044
 	{
 		const DWORD Ret = WaitForMultipleObjects( std::size(g_hEvents), g_hEvents, false, INFINITE );
 
@@ -546,14 +546,14 @@ static void RemoveAllMyNotificationIcons( HWND hWnd )
 	nid.hWnd = hWnd;
 	nid.uFlags = 0;
 
-	for ( nid.uID = 0; nid.uID < g_DriveIconDisplayed.size(); ++nid.uID )
+	for ( nid.uID = 0; nid.uID < g_DriveIconDisplayed.size(); ++nid.uID )	//-V104
 	{
-		/* Are we displaying an icon for this drive? */
+		// Because there's a chance that the icon is still being
+		// displayed, but not identified as such, just delete all
+		// possible icons.
+				/* Are we displaying an icon for this drive? */
 //				if ( g_DriveIconDisplayed[nid.uID] )
 // 
-				// Because there's a chance that the icon is still being
-				// displayed, but not identified as such, just delete all
-				// possible icons.
 		{
 			Shell_NotifyIcon( NIM_DELETE, &nid );
 		}
@@ -879,21 +879,21 @@ static UINT g_TaskBarCreated = 0;
 //  PURPOSE: Registers the window class.
 static ATOM MyRegisterClass(HINSTANCE hInstance) noexcept
 {
-	WNDCLASSEX wcex;
-
-	wcex.cbSize = sizeof(WNDCLASSEX);
-
-	wcex.style			= CS_HREDRAW | CS_VREDRAW;
-	wcex.lpfnWndProc	= WndProc;
-	wcex.cbClsExtra		= 0;
-	wcex.cbWndExtra		= 0;
-	wcex.hInstance		= hInstance;
-	wcex.hIcon			= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_SPMONITOR));
-	wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
-	wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
-	wcex.lpszMenuName	= MAKEINTRESOURCE(IDC_SPMONITOR);
-	wcex.lpszClassName	= szWindowClass;
-	wcex.hIconSm		= LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+	const WNDCLASSEX wcex
+	{
+		.cbSize = sizeof(WNDCLASSEX),
+		.style = CS_HREDRAW | CS_VREDRAW,
+		.lpfnWndProc = WndProc,
+		.cbClsExtra = 0,
+		.cbWndExtra = 0,
+		.hInstance = hInstance,
+		.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_SPMONITOR)),
+		.hCursor = LoadCursor(NULL, IDC_ARROW),
+		.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1),
+		.lpszMenuName = MAKEINTRESOURCE(IDC_SPMONITOR),
+		.lpszClassName = szWindowClass,
+		.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL)),
+	};
 
 	return RegisterClassEx(&wcex);
 }

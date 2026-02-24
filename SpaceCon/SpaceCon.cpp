@@ -453,11 +453,11 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 				{
 					const LONG CharWidth = [hList]()
 					{
-							HDC hDC = GetDC( hList );
+						HDC hDC = GetDC( hList );
 
 						// Don't use tmAveCharWidth. See https://devblogs.microsoft.com/oldnewthing/20221103-00/?p=107350
 						constexpr static const char AllLetters[]{ "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" };
-						constexpr size_t NumLetters{ 52 };
+						constexpr int NumLetters{ 52 };
 						static_assert(sizeof(AllLetters)-1 == NumLetters);
 						SIZE siz;
 						LONG AveWidth;
@@ -671,9 +671,9 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 		// The Modify button
 		case IDOK:
 			{
-			const HWND hList = GetDlgItem( hDlg, IDC_LIST );
+				const HWND hList = GetDlgItem( hDlg, IDC_LIST );
 
-			const int SelItem = ListView_GetNextItem( hList, -1, LVNI_SELECTED );	//-V2005
+				const int SelItem = ListView_GetNextItem( hList, -1, LVNI_SELECTED );	//-V2005
                 if ( SelItem != -1 )
                 {
 					LVITEM lvi;
@@ -913,7 +913,7 @@ int WINAPI wWinMain(
 	_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE /*hPrevInstance*/,
 	_In_ LPWSTR /*lpCmdLine*/,
-	_In_ int nShowCmd
+	_In_ int /*nShowCmd*/
 	)
 {
 	/* Debug version memory leak checking */
