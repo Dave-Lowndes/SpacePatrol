@@ -12,6 +12,7 @@
 #include <chrono>
 #include <filesystem>
 #include <optional>
+#include <span>
 #include <vector>
 
 using namespace std::chrono_literals;
@@ -44,11 +45,6 @@ static optional<CMyRegData> g_RegData;
 
 static HANDLE g_hNotifyThread;	// Thread handle of the notification thread that monitors for settings changes
 
-/* The following are the names of the registry keys and values */
-/* These are the registry key/value for the XP facility */
-#define EXPLORER_KEY _T("Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer")
-#define EXPLORER_VAL _T("NoLowDiskSpaceChecks")
-
 static HANDLE g_hMonitorInstance;	// Event handle to ensure only a single instance of the monitoring process (per desktop)
 
 // The taskbar icon for the disk drive
@@ -58,11 +54,6 @@ static HICON g_DiskDriveIcon;
 static std::bitset<26> g_DriveIconDisplayed;
 // Similarly, this records which drives the user doesn't want to be reminded of
 static std::bitset<26> g_bNoRefreshTip;
-
-constexpr auto AMEGABYTE{ 1024 * 1024ULL };
-
-// This is the time that we (should) keep checking the space
-constexpr auto POLL_TIME{ 45 * 1000 };
 
 // This is the period after we've displayed (or refreshed) an icon when we want to re-display the tooltip
 constexpr DWORD INITIAL_REDISPLAY_TIME{ 5 * 60 * 1000 };
@@ -77,7 +68,7 @@ static int ResMessageBox( HWND hWnd, int ResId, LPCTSTR pCaption, const int Flag
 
 static void LoadResourceStringSpan( HINSTANCE hInstance, UINT uID, std::span<TCHAR> Buffer )
 {
-#if _DEBUG
+#ifdef _DEBUG
 	const int NumCharsLoaded =
 #endif
 		LoadString( hInstance, uID, Buffer.data(), static_cast<int>(Buffer.size() ) );	//-V530 //-V107
@@ -117,7 +108,7 @@ static void HandleDiskSpaceBelowThreshold( ULONGLONG UserFree, NOTIFYICONDATA& n
 	StrFormatByteSizeW( UserFree, szSpaceRemainingW, std::size( szSpaceRemainingW ) );
 
 	/*_T("Low Disk Space Notification\nDrive %c: %s")*/
-	_sntprintf_s( nid.szInfo, _countof(nid.szInfo), g_TipInfoFmtString, _T( 'A' ) + dNum, static_cast<LPCTSTR>(szSpaceRemainingW) );	//-V111
+	_sntprintf_s( nid.szInfo, std::size(nid.szInfo), g_TipInfoFmtString, _T( 'A' ) + dNum, static_cast<LPCTSTR>(szSpaceRemainingW) );	//-V111
 
 	LoadResourceStringSpan( g_hResInst, IDS_LDS_CAPTION, nid.szInfoTitle );
 
@@ -149,7 +140,7 @@ static void HandleDiskSpaceBelowThreshold( ULONGLONG UserFree, NOTIFYICONDATA& n
 		nid.uCallbackMessage = UWM_TIPNOTIFY;
 
 		// "JD Design Space Patrol: Low disk space on drive %c: %s"
-		_sntprintf_s( nid.szTip, _countof(nid.szTip), g_TipFmtString, _T( 'A' ) + dNum, static_cast<LPCTSTR>(szSpaceRemainingW) );	//-V111
+		_sntprintf_s( nid.szTip, std::size(nid.szTip), g_TipFmtString, _T( 'A' ) + dNum, static_cast<LPCTSTR>(szSpaceRemainingW) );	//-V111
 
 		if ( Shell_NotifyIcon( NIM_ADD, &nid ) )
 		{
@@ -293,7 +284,6 @@ static void HandleMonitorTimer( HWND hWnd )
 		_ASSERT( false );
 		return;
 	}
-//	const DWORD dwDrives = GetLogicalDrives();
 
 	/* Initialise the fixed aspects of the notification icon data */
 	NOTIFYICONDATA nid;
@@ -303,12 +293,9 @@ static void HandleMonitorTimer( HWND hWnd )
 	// Use the current icon
 	nid.hIcon = g_DiskDriveIcon;
 
-//	WORD dNum;
 	/* Loop for all disk drives on the system */
-	LPTSTR pDrive;
-
 	// Loop for valid disk drives
-	for (	pDrive = szDriveStrings.data();
+	for (	LPCTSTR pDrive = szDriveStrings.data();
 			pDrive[0] != _T('\0');
 			pDrive = &pDrive[ lstrlen( pDrive ) + 1 ] )
 	{
@@ -855,7 +842,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 						StrFormatByteSizeW( UserFree.QuadPart, szSpaceRemainingW, std::size( szSpaceRemainingW ) );
 
 						/*_T("JD Design Space Patrol: Low disk space on drive %c: %s")*/
-						_sntprintf_s( nid.szTip, _countof(nid.szTip), g_TipFmtString, _T( 'A' ) + DriveNum, static_cast<LPCTSTR>(szSpaceRemainingW) );	//-V111
+						_sntprintf_s( nid.szTip, std::size(nid.szTip), g_TipFmtString, _T( 'A' ) + DriveNum, static_cast<LPCTSTR>(szSpaceRemainingW) );	//-V111
 
 						nid.uFlags = NIF_TIP;
 						nid.uTimeout = TOOLTIP_DISPLAY_TIME;

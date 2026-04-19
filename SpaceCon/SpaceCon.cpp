@@ -4,7 +4,7 @@
 #include "stdafx.h"
 
 #include <atlbase.h>
-#include <atltime.h>
+#include <atlstr.h>
 
 #include <Shellapi.h>
 #include <commctrl.h>
@@ -13,7 +13,6 @@
 #include <windowsx.h>
 #include <strsafe.h>
 #include <VersionHelpers.h>
-#include <process.h>
 #include <vector>
 #include <optional>
 #include <filesystem>
@@ -39,13 +38,8 @@ static HINSTANCE g_hResInst;			// Resource DLL instance
 static CStringW szAppName;			// The title bar text
 static LPCTSTR szWindowClass = _T("JDDESIGN_SPACECON");
 
-/* These are the registry key/value for the XP facility */
-#define EXPLORER_KEY _T("Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer")
-#define EXPLORER_VAL _T("NoLowDiskSpaceChecks")
-
 static optional<CMyRegData> g_RegData;
 
-constexpr auto AMEGABYTE{ 1024 * 1024ULL };
 constexpr auto AGIGABYTE{ 1024 * 1024 * 1024ULL };
 
 struct COLSTRUCT
@@ -103,16 +97,16 @@ public:
 static void InsertDriveDataIntoListControl( HWND hList, int Item, WORD DriveNum, LPCTSTR pDrive )
 {
 	/* Allocate a new per-item data */
-	auto pItemData = new CModDlgParams();
+	auto pItemData = std::make_unique<CModDlgParams>();
 
 	pItemData->DriveNum = DriveNum;
-	StringCchCopy( pItemData->szDrive, _countof( pItemData->szDrive ), pDrive );
+	StringCchCopy( pItemData->szDrive, std::size( pItemData->szDrive ), pDrive );
 
 	/* Get the cosmetic drive name */
 	SHFILEINFO sfi{ 0 };	// Init only to silence the compiler warning unnecessarily
 	if ( SHGetFileInfo( pItemData->szDrive, FILE_ATTRIBUTE_DIRECTORY, &sfi, sizeof( sfi ), SHGFI_DISPLAYNAME ) )
 	{
-		StringCchCopy( pItemData->szVolName, _countof( pItemData->szVolName ), sfi.szDisplayName );
+		StringCchCopy( pItemData->szVolName, std::size( pItemData->szVolName ), sfi.szDisplayName );
 	}
 
 	LVITEMW lvi;
@@ -125,13 +119,14 @@ static void InsertDriveDataIntoListControl( HWND hList, int Item, WORD DriveNum,
 	* change notification happens as a result of subsequent operations here,
 	* I need to set up the drive number ready to handle this.
 	*/
-	lvi.lParam = reinterpret_cast<LPARAM>(pItemData);
+	lvi.lParam = reinterpret_cast<LPARAM>(pItemData.get());
 
 	/* Can't set the check box when inserting */
-	ListView_InsertItem( hList, &lvi );
-
-	/* Set the check box to indicate the current enabled/disabled state. */
-	ListView_SetCheckState( hList, Item, g_DriveConfig[pItemData->DriveNum].bCheckMe );
+	if ( ListView_InsertItem( hList, &lvi ) != -1 )
+	{
+		ListView_SetCheckState( hList, Item, g_DriveConfig[pItemData->DriveNum].bCheckMe );
+		pItemData.release(); // list view now owns it
+	}
 }
 
 /// <summary>
@@ -159,12 +154,12 @@ static void UpdateDriveInformation( HWND hList, int Item )
 	if ( GetDiskFreeSpaceEx( ItemData.szDrive, &CallerFreeBytes, &TotalBytes, &TotalFreeBytes ) )
 	{
 		WCHAR szBufferW[20];
-		StrFormatByteSizeW( TotalBytes.QuadPart, szBufferW, _countof( szBufferW ) );
+		StrFormatByteSizeW( TotalBytes.QuadPart, szBufferW, std::size( szBufferW ) );
 		lvi.pszText = szBufferW;
 		lvi.iSubItem = COL_SIZE;
 		::SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi) );
 
-		StrFormatByteSizeW( TotalFreeBytes.QuadPart, szBufferW, _countof( szBufferW ) );
+		StrFormatByteSizeW( TotalFreeBytes.QuadPart, szBufferW, std::size( szBufferW ) );
 		lvi.pszText = szBufferW;
 		lvi.iSubItem = COL_TOT_FREE;
 		::SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi) );
@@ -180,7 +175,7 @@ static void UpdateDriveInformation( HWND hList, int Item )
 		}
 
 		/* Calculate in some meaningful way, the actual alarm size figure for this drive */
-		StrFormatByteSizeW( g_DriveConfig[ItemData.DriveNum].AlarmAt, szBufferW, _countof( szBufferW ) );
+		StrFormatByteSizeW( g_DriveConfig[ItemData.DriveNum].AlarmAt, szBufferW, std::size( szBufferW ) );
 		lvi.pszText = szBufferW;
 		lvi.iSubItem = COL_NOTIFY;
 		::SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi) );
@@ -278,10 +273,10 @@ static INT_PTR CALLBACK ModifyDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 
 			WCHAR szBufferW[20];
 
-			StrFormatByteSizeW( pModParams->DriveSize, szBufferW, _countof( szBufferW ) );
+			StrFormatByteSizeW( pModParams->DriveSize, szBufferW, std::size( szBufferW ) );
 			SetDlgItemText( hDlg, IDC_DRIVE_SIZE, szBufferW );
 			
-			StrFormatByteSizeW( pModParams->FreeSpace, szBufferW, _countof( szBufferW ) );
+			StrFormatByteSizeW( pModParams->FreeSpace, szBufferW, std::size( szBufferW ) );
 			SetDlgItemText( hDlg, IDC_DRIVE_FREE, szBufferW );
 
 			// Use GB only if the threshold is a multiple of 1GB
@@ -363,13 +358,6 @@ static INT_PTR CALLBACK ModifyDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 	return FALSE;
 }
 
-#if 0
-static bool IsWin98()
-{
-	return ( g_vi.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS ) && ( g_vi.dwMajorVersion >= 4 ) && ( g_vi.dwMinorVersion >= 10 );
-}
-#endif
-
 static int MessageBoxForSystemError( HWND hDlg, DWORD ErrorValue, LPCTSTR pAppName, int MsgBoxFlags )
 {
 	int rv;
@@ -400,9 +388,6 @@ static int MessageBoxForSystemError( HWND hDlg, DWORD ErrorValue, LPCTSTR pAppNa
 	return rv;
 }
 
-// This is the time that we (should) keep updating the list control items
-constexpr auto POLL_TIME{ 45 * 1000 };
-
 static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	static bool g_bModified = false;
@@ -411,10 +396,10 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 	{
 	case WM_INITDIALOG:
 		{
-		const HWND hList = GetDlgItem( hDlg, IDC_LIST );
+			const HWND hList = GetDlgItem( hDlg, IDC_LIST );
 
 			/* Give the list control the full row select, checkboxes, and tooltip for partially shown items */
-		ListView_SetExtendedListViewStyle( hList, LVS_EX_FULLROWSELECT | LVS_EX_CHECKBOXES | LVS_EX_INFOTIP );
+			ListView_SetExtendedListViewStyle( hList, LVS_EX_FULLROWSELECT | LVS_EX_CHECKBOXES | LVS_EX_INFOTIP );
 
 			/* Initialise the columns of the list control */
 			{
@@ -437,7 +422,7 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 							DWORD csResSize = SizeofResource( g_hResInst, hRsrc );
 
 							// For safety, do the least we have
-							csResSize = min( csResSize, _countof(g_columnFmts ) );
+							csResSize = min( csResSize, std::size(g_columnFmts ) );
 
 							/* Copy the bytes over the embedded column structure */
 							for ( UINT ColNo = 0; ColNo < csResSize; ColNo++ )
@@ -478,14 +463,15 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 						return AveWidth;
 					}();
 
-					for ( size_t ColNo = 0; ColNo < _countof( g_columnFmts ); ColNo++ )
+					for ( size_t ColNo = 0; ColNo < std::size( g_columnFmts ); ColNo++ )
 					{
+						const auto & colItem = g_columnFmts[ColNo];
+
 						LVCOLUMN lvc;
 						lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
-						lvc.fmt = g_columnFmts[ColNo].Align;
-
+						lvc.fmt = colItem.Align;
 						CString sCaption;
-						if ( sCaption.LoadString( g_hResInst, g_columnFmts[ColNo].StringID ) )
+						if ( sCaption.LoadString( g_hResInst, colItem.StringID ) )
 						{
 							lvc.pszText = const_cast<LPTSTR>(static_cast<LPCTSTR>(sCaption));
 						}
@@ -495,7 +481,7 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 							_ASSERT( false );
 						}
 
-						lvc.cx = g_columnFmts[ColNo].WidthInChars * CharWidth;
+						lvc.cx = colItem.WidthInChars * CharWidth;
 
 						ListView_InsertColumn( hList, ColNo, &lvc );	//-V220
 					}
@@ -504,34 +490,40 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 				/* Populate the list */
 				{
 					const auto ReqdBufferSize = GetLogicalDriveStrings( 0, nullptr );
-					vector<TCHAR> szDriveStrings( ReqdBufferSize );
-					GetLogicalDriveStrings( ReqdBufferSize, szDriveStrings.data() );
-
-					const DWORD dwDrives = GetLogicalDrives();
-					int Item;
-					WORD dNum;
-
-					/* Loop for all disk drives on the system (A...Z) */
-					LPCTSTR pDrive;
-
-					for ( dNum = 0, Item = 0, pDrive = szDriveStrings.data(); dNum < 26; dNum++ )
+					if ( ReqdBufferSize == 0 )
 					{
-						/* If the bit is set for the drive */
-						if ( dwDrives & (1 << dNum ) )
+						_ASSERT(false);
+						return FALSE;
+					}
+					vector<TCHAR> szDriveStrings( ReqdBufferSize );
+					if ( GetLogicalDriveStrings( ReqdBufferSize, szDriveStrings.data() ) == 0 )
+					{
+						_ASSERT(false);
+						return FALSE;
+					}
+
+					auto Item{ 0 };
+
+					/* Loop for all disk drives on the system */
+					for (LPCTSTR pDrive = szDriveStrings.data();
+						pDrive[0] != _T('\0');
+						pDrive = &pDrive[lstrlen(pDrive) + 1])
+					{
+						const UINT drivetype = GetDriveType( pDrive );
+
+						/* Check hard disks and removable ones like ZIP drives (unfortunately, this includes floppys too) */
+						if ( ( DRIVE_FIXED == drivetype ) /*|| ( DRIVE_REMOVABLE == drivetype )*/ )
 						{
-							const UINT drivetype = GetDriveType( pDrive );
+							// Derive the drive number directly from the drive letter - no TOCTOU risk
+							const WORD dNum = static_cast<WORD>(pDrive[0] - _T('A'));
 
-							/* Check hard disks and removable ones like ZIP drives (unfortunately, this includes floppys too) */
-							if ( ( DRIVE_FIXED == drivetype ) /*|| ( DRIVE_REMOVABLE == drivetype )*/ )
-							{
-								InsertDriveDataIntoListControl( hList, Item, dNum, pDrive );
-								UpdateDriveInformation( hList, Item );
+							if (dNum >= std::size(g_DriveConfig))
+								break;
 
-								Item++;
-							}
+							InsertDriveDataIntoListControl( hList, Item, dNum, pDrive );
+							UpdateDriveInformation( hList, Item );
 
-							/* Next drive letter */
-							pDrive = &pDrive[lstrlen( pDrive ) + 1]; //-V108
+							Item++;
 						}
 					}
 
@@ -557,28 +549,16 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 
 						if ( ERROR_SUCCESS == rk.Open( HKEY_LOCAL_MACHINE, EXPLORER_KEY, KEY_READ ) )
 						{
-							if ( ERROR_SUCCESS == rk.QueryDWORDValue( EXPLORER_VAL, Value ) )
-							{
-								;
-							}
-							else
-							{
-								;
-							}
+							rk.QueryDWORDValue(EXPLORER_VAL, Value);
 						}
 					}
-					//else
-					//if ( IsWin98() )
-					//{
-					//	Value = GetWin98LDSFlags();
-					//}
 
 					CheckDlgButton( hDlg, IDC_DISABLE_OS, Value != 0 ? BST_CHECKED: BST_UNCHECKED );
 				}
 			}
 
 			/* Enable the OS feature if it's not an OS with the feature */
-			EnableWindow( GetDlgItem( hDlg, IDC_DISABLE_OS), ::IsWindowsXPSP3OrGreater() /*|| IsWin98()*/ );
+			EnableWindow( GetDlgItem( hDlg, IDC_DISABLE_OS), ::IsWindowsXPSP3OrGreater() );
 
 			// Disable the apply button until we make a change
 			EnableWindow( GetDlgItem( hDlg, IDC_SAVE ), false );
@@ -616,7 +596,7 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 						{
 							const BOOL bState = ListView_GetCheckState( phdr->hwndFrom, plv->iItem );
 							CModDlgParams * mp = reinterpret_cast<CModDlgParams *>( plv->lParam );
-							g_DriveConfig[mp->DriveNum].bCheckMe = bState ? true : false;
+							g_DriveConfig[mp->DriveNum].bCheckMe = bState;
 
 							/* Set the modified flag */
 							g_bModified = true;
@@ -642,6 +622,11 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 						LVITEM lvi;
 						lvi.mask = LVIF_PARAM;
 						lvi.iItem = indx;
+						// Explicitly specify the subitem to ensure we get the correct lParam
+						// (the list view control doesn't guarantee that the lParam is the same
+						// for all subitems, and some operations can cause it to be lost if you
+						// don't specify the subitem)
+						lvi.iSubItem = 0;
 						ListView_GetItem( pnmv->hdr.hwndFrom, &lvi );
 						CModDlgParams * mp = reinterpret_cast<CModDlgParams *>(lvi.lParam);
 						delete mp;
@@ -677,6 +662,10 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 					LVITEM lvi;
 					lvi.mask = LVIF_PARAM;
 					lvi.iItem = SelItem;
+					// Explicitly specify the subitem to ensure we get the correct lParam (the list
+					// view control doesn't guarantee that the lParam is the same for all subitems,
+					// and some operations can cause it to be lost if you don't specify the subitem)
+					lvi.iSubItem = 0;
 					ListView_GetItem( hList, &lvi );
 					CModDlgParams * mp = reinterpret_cast<CModDlgParams *>(lvi.lParam);
 
@@ -761,7 +750,7 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 					}
 
 					/* Switch on/off the Windows XP settings */
-					const bool bEnableOSSettings = IsDlgButtonChecked( hDlg, IDC_DISABLE_OS ) == BST_CHECKED ? false: true;
+					const bool bDisableOSSettings = IsDlgButtonChecked( hDlg, IDC_DISABLE_OS ) == BST_CHECKED;
 
 					/* Is it WinXP or compatible? */
 					if (::IsWindowsXPSP3OrGreater())
@@ -769,14 +758,11 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 						const LONG RRes = RegCreateKeyEx( HKEY_LOCAL_MACHINE, EXPLORER_KEY, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, NULL );
 						if ( ERROR_SUCCESS == RRes )
 						{
-							const DWORD Value = bEnableOSSettings ? 0: 1;
+							const DWORD Value = bDisableOSSettings ? 1 : 0;
 
 							const LONG RegRes1 = RegSetValueEx( hKey, EXPLORER_VAL, 0, REG_DWORD, reinterpret_cast<LPCBYTE>( &Value ), sizeof( Value ) );
 
-							if ( ERROR_SUCCESS == RegRes1 )
-							{
-							}
-							else
+							if ( ERROR_SUCCESS != RegRes1 )
 							{
 								MessageBoxForSystemError( hDlg, RegRes1, szAppName, MB_OK | MB_ICONINFORMATION );
 							}
@@ -803,14 +789,6 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 							}
 						}
 					}
-					//else
-					///* Is it Win98? */
-					//if ( IsWin98() )
-					//{
-					//	const DWORD dwVal = bEnableOSSettings ? 0: (DWORD) -1;
-
-					//	SetWin98LDSFlags( dwVal );
-					//}
 
 					/* Clear the modified flag */
 					g_bModified = false;
