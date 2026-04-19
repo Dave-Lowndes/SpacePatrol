@@ -45,8 +45,8 @@ static LPCTSTR szWindowClass = _T("JDDESIGN_SPACECON");
 
 static optional<CMyRegData> g_RegData;
 
-constexpr auto AMEGABYTE{ 1024 * 1024 };
-constexpr auto AGIGABYTE{ 1024 * 1024 * 1024 };
+constexpr auto AMEGABYTE{ 1024 * 1024ULL };
+constexpr auto AGIGABYTE{ 1024 * 1024 * 1024ULL };
 
 struct COLSTRUCT
 {
@@ -144,18 +144,21 @@ static void UpdateDriveInformation( HWND hList, int Item )
 	LVITEM lvi;
 	lvi.mask = LVIF_PARAM;
 	lvi.iItem = Item;
+	// Explicitly specify the subitem to ensure we get the correct lParam (the list
+	// view control doesn't guarantee that the lParam is the same for all subitems,
+	// and some operations can cause it to be lost if you don't specify the subitem)
+	lvi.iSubItem = 0;
 	ListView_GetItem( hList, &lvi );
 
 	CModDlgParams& ItemData = *reinterpret_cast<CModDlgParams *>( lvi.lParam );
 
-	ULARGE_INTEGER CallerFreeBytes, TotalBytes, TotalFreeBytes;
-	WCHAR szBufferW[20];
-
 	/* Hard to believe, but the stupid ASCII version of
 	 * StrFormatByteSize, only takes a DWORD size!
 	 */
+	ULARGE_INTEGER CallerFreeBytes, TotalBytes, TotalFreeBytes;
 	if ( GetDiskFreeSpaceEx( ItemData.szDrive, &CallerFreeBytes, &TotalBytes, &TotalFreeBytes ) )
 	{
+		WCHAR szBufferW[20];
 		StrFormatByteSizeW( TotalBytes.QuadPart, szBufferW, _countof( szBufferW ) );
 		lvi.pszText = szBufferW;
 		lvi.iSubItem = COL_SIZE;
@@ -168,76 +171,75 @@ static void UpdateDriveInformation( HWND hList, int Item )
 
 		ItemData.DriveSize = TotalBytes.QuadPart;
         ItemData.FreeSpace = TotalFreeBytes.QuadPart;
-	}
-	
 
-	// Detect the uninitialised state - AlarmAt == 0, and replace with something more reasonable
-	if ( g_DriveConfig[ItemData.DriveNum].AlarmAt == 0 )
-	{
-		// Use 15% figure initially
-		g_DriveConfig[ItemData.DriveNum].AlarmAt = TotalBytes.QuadPart * 15 / 100;
-	}
+		// Detect the uninitialised state - AlarmAt == 0, and replace with something more reasonable
+		if ( g_DriveConfig[ItemData.DriveNum].AlarmAt == 0 )
+		{
+			// Use 15% figure initially
+			g_DriveConfig[ItemData.DriveNum].AlarmAt = TotalBytes.QuadPart * 15 / 100;
+		}
 
-	/* Calculate in some meaningful way, the actual alarm size figure for this drive */
-	StrFormatByteSizeW( g_DriveConfig[ItemData.DriveNum].AlarmAt, szBufferW, _countof( szBufferW ) );
-	lvi.pszText = szBufferW;
-	lvi.iSubItem = COL_NOTIFY;
-	::SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi) );
+		/* Calculate in some meaningful way, the actual alarm size figure for this drive */
+		StrFormatByteSizeW( g_DriveConfig[ItemData.DriveNum].AlarmAt, szBufferW, _countof( szBufferW ) );
+		lvi.pszText = szBufferW;
+		lvi.iSubItem = COL_NOTIFY;
+		::SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi) );
 
-	ItemData.AlarmThreshold = g_DriveConfig[ItemData.DriveNum].AlarmAt;
+		ItemData.AlarmThreshold = g_DriveConfig[ItemData.DriveNum].AlarmAt;
 
-	/* Try to make some recommendation based on the free space & current setting */
-	const auto MsgID = []( ULONGLONG TotalFreeBytes, ULONGLONG AlarmAt, ULONGLONG DriveSize )
-	{
-			if ( TotalFreeBytes < 1ULL * AMEGABYTE )
-			{
-				/* The total free space on the drive is very limited - advise freeing some space before it's too late */
-				return IDS_RECOMEND_VERY_LOW;
-			}
-			else
-			{
-				/* Have we got less than the user's alarm setting? */
-				if ( AlarmAt >= TotalFreeBytes )
+		/* Try to make some recommendation based on the free space & current setting */
+		const auto MsgID = []( ULONGLONG TotalFreeBytes, ULONGLONG AlarmAt, ULONGLONG DriveSize )
+		{
+				if ( TotalFreeBytes < 1ULL * AMEGABYTE )
 				{
-					/* Yes, we're at the alarm point */
-					/* Have we got sufficient space to defragment the drive? */
-					return ( TotalFreeBytes < (15 * DriveSize) / 100 ) ?
-								IDS_RECOMMEND_FREE_SPACE :
-								/* We've already exceeded the alarm point - better alter it to prevent repeated alarms */
-								IDS_RECOMEND_BELOW_THRESHOLD;
+					/* The total free space on the drive is very limited - advise freeing some space before it's too late */
+					return IDS_RECOMEND_VERY_LOW;
 				}
 				else
 				{
-					// If we're within 2MB of the alarm point, warn the user
-					return ( (TotalFreeBytes - AlarmAt) < 2ULL * AMEGABYTE ) ?
-								/* We're pretty close to the alarm point - watch out! */
-								IDS_RECOMEND_NEAR_THRESHOLD :
-								0;
+					/* Have we got less than the user's alarm setting? */
+					if ( AlarmAt >= TotalFreeBytes )
+					{
+						/* Yes, we're at the alarm point */
+						/* Have we got sufficient space to defragment the drive? */
+						return ( TotalFreeBytes < (15 * DriveSize) / 100 ) ?
+									IDS_RECOMMEND_FREE_SPACE :
+									/* We've already exceeded the alarm point - better alter it to prevent repeated alarms */
+									IDS_RECOMEND_BELOW_THRESHOLD;
+					}
+					else
+					{
+						// If we're within 2MB of the alarm point, warn the user
+						return ( (TotalFreeBytes - AlarmAt) < 2ULL * AMEGABYTE ) ?
+									/* We're pretty close to the alarm point - watch out! */
+									IDS_RECOMEND_NEAR_THRESHOLD :
+									0;
+					}
 				}
-			}
 		}( TotalFreeBytes.QuadPart, g_DriveConfig[ItemData.DriveNum].AlarmAt, ItemData.DriveSize );
 
-	lvi.iSubItem = COL_RECOMENDATION;
+		lvi.iSubItem = COL_RECOMENDATION;
 
-	if ( MsgID != 0 )
-	{
-		CString str;
-		if ( str.LoadString( g_hInstance, MsgID ) )
+		if ( MsgID != 0 )
 		{
-			lvi.pszText = const_cast<LPTSTR>(static_cast<LPCTSTR>(str));
+			CString str;
+			if ( str.LoadString( g_hInstance, MsgID ) )
+			{
+				lvi.pszText = const_cast<LPTSTR>(static_cast<LPCTSTR>(str));
 
-			SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi) );
+				SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi) );
+			}
+			else
+			{
+				// What's gone wrong to lose the string?
+				_ASSERT( false );
+			}
 		}
 		else
 		{
-			// What's gone wrong to lose the string?
-			_ASSERT( false );
+			lvi.pszText = nullptr;
+			SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi) );
 		}
-	}
-	else
-	{
-		lvi.pszText = nullptr;
-		SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi) );
 	}
 }
 
@@ -361,10 +363,6 @@ static INT_PTR CALLBACK ModifyDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 	return FALSE;
 }
 
-static bool IsXP()
-{
-	return ::IsWindowsXPSP3OrGreater();
-}
 #if 0
 static bool IsWin98()
 {
@@ -553,7 +551,7 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 				{
 					DWORD Value = 0;
 
-					if ( IsXP() )
+					if (::IsWindowsXPSP3OrGreater() )
 					{
 						CRegKey rk;
 
@@ -580,7 +578,7 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			}
 
 			/* Enable the OS feature if it's not an OS with the feature */
-			EnableWindow( GetDlgItem( hDlg, IDC_DISABLE_OS), IsXP() /*|| IsWin98()*/ );
+			EnableWindow( GetDlgItem( hDlg, IDC_DISABLE_OS), ::IsWindowsXPSP3OrGreater() /*|| IsWin98()*/ );
 
 			// Disable the apply button until we make a change
 			EnableWindow( GetDlgItem( hDlg, IDC_SAVE ), false );
@@ -766,7 +764,7 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 					const bool bEnableOSSettings = IsDlgButtonChecked( hDlg, IDC_DISABLE_OS ) == BST_CHECKED ? false: true;
 
 					/* Is it WinXP or compatible? */
-					if ( IsXP() )
+					if (::IsWindowsXPSP3OrGreater())
 					{
 						const LONG RRes = RegCreateKeyEx( HKEY_LOCAL_MACHINE, EXPLORER_KEY, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, NULL );
 						if ( ERROR_SUCCESS == RRes )
@@ -832,6 +830,7 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			if ( !g_bModified || ( ResMessageBox( hDlg, IDS_UNSAVED_PROMPT, szAppName,
 													MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON2 ) == IDYES ) )
 			{
+				KillTimer(hDlg, 1);
 				EndDialog( hDlg, LOWORD( wParam ) );
 				return TRUE;
 			}

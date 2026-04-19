@@ -59,15 +59,15 @@ static std::bitset<26> g_DriveIconDisplayed;
 // Similarly, this records which drives the user doesn't want to be reminded of
 static std::bitset<26> g_bNoRefreshTip;
 
-constexpr auto AMEGABYTE{ 1024 * 1024 };
+constexpr auto AMEGABYTE{ 1024 * 1024ULL };
 
 // This is the time that we (should) keep checking the space
 constexpr auto POLL_TIME{ 45 * 1000 };
 
 // This is the period after we've displayed (or refreshed) an icon when we want to re-display the tooltip
-constexpr auto INITIAL_REDISPLAY_TIME{ 5 * 60 * 1000 };
-constexpr auto MAX_REDISPLAY_TIME{ 2 * 60 * 60 * 1000 };
-constexpr auto TOOLTIP_DISPLAY_TIME{ 10 * 1000 };
+constexpr DWORD INITIAL_REDISPLAY_TIME{ 5 * 60 * 1000 };
+constexpr DWORD MAX_REDISPLAY_TIME{ 2 * 60 * 60 * 1000 };
+constexpr DWORD TOOLTIP_DISPLAY_TIME{ 10 * 1000 };
 
 static int ResMessageBox( HWND hWnd, int ResId, LPCTSTR pCaption, const int Flags )
 {
@@ -80,7 +80,7 @@ static void LoadResourceStringSpan( HINSTANCE hInstance, UINT uID, std::span<TCH
 #if _DEBUG
 	const int NumCharsLoaded =
 #endif
-		LoadString( hInstance, uID, Buffer.data(), Buffer.size() );	//-V530 //-V107
+		LoadString( hInstance, uID, Buffer.data(), static_cast<int>(Buffer.size() ) );	//-V530 //-V107
 	// Resource string must be present
 	_ASSERT( NumCharsLoaded != 0 );
 }
@@ -117,7 +117,7 @@ static void HandleDiskSpaceBelowThreshold( ULONGLONG UserFree, NOTIFYICONDATA& n
 	StrFormatByteSizeW( UserFree, szSpaceRemainingW, std::size( szSpaceRemainingW ) );
 
 	/*_T("Low Disk Space Notification\nDrive %c: %s")*/
-	_stprintf( nid.szInfo, g_TipInfoFmtString, _T( 'A' ) + dNum, static_cast<LPCTSTR>(szSpaceRemainingW) );	//-V111
+	_sntprintf_s( nid.szInfo, _countof(nid.szInfo), g_TipInfoFmtString, _T( 'A' ) + dNum, static_cast<LPCTSTR>(szSpaceRemainingW) );	//-V111
 
 	LoadResourceStringSpan( g_hResInst, IDS_LDS_CAPTION, nid.szInfoTitle );
 
@@ -137,7 +137,7 @@ static void HandleDiskSpaceBelowThreshold( ULONGLONG UserFree, NOTIFYICONDATA& n
 #pragma warning( push )
 #pragma warning( disable:28159 )
 	const auto tcNow = GetTickCount();
-#pragma warning( push )
+#pragma warning( pop )
 
 	/* Are we already displaying this drive's icon? */
 	if ( !g_DriveIconDisplayed[dNum] )
@@ -149,7 +149,7 @@ static void HandleDiskSpaceBelowThreshold( ULONGLONG UserFree, NOTIFYICONDATA& n
 		nid.uCallbackMessage = UWM_TIPNOTIFY;
 
 		// "JD Design Space Patrol: Low disk space on drive %c: %s"
-		_stprintf( nid.szTip, g_TipFmtString, _T( 'A' ) + dNum, static_cast<LPCTSTR>(szSpaceRemainingW) );	//-V111
+		_sntprintf_s( nid.szTip, _countof(nid.szTip), g_TipFmtString, _T( 'A' ) + dNum, static_cast<LPCTSTR>(szSpaceRemainingW) );	//-V111
 
 		if ( Shell_NotifyIcon( NIM_ADD, &nid ) )
 		{
@@ -223,7 +223,7 @@ static void HandleDiskSpaceBelowThreshold( ULONGLONG UserFree, NOTIFYICONDATA& n
 /// </summary>
 /// <param name="pDrive">A pointer to a string specifying the drive to monitor (e.g., 'C:\').</param>
 /// <param name="nid">A reference to a partially pre-configured NOTIFYICONDATA structure used to configure and display the notification icon and tooltip.</param>
-static void MonitorDiskSpace( LPTSTR pDrive, NOTIFYICONDATA& nid )
+static void MonitorDiskSpace( LPCTSTR pDrive, NOTIFYICONDATA& nid )
 {
 	ULARGE_INTEGER UserFree, Total, TotFree;
 	if ( GetDiskFreeSpaceEx( pDrive, &UserFree, &Total, &TotFree ) )
@@ -250,12 +250,13 @@ static void MonitorDiskSpace( LPTSTR pDrive, NOTIFYICONDATA& nid )
 				}
 				else
 				{
-#ifdef DEBUG
+#ifdef _DEBUG
 					auto hr = GetLastError();
 					std::wstring strError = std::format( L"Failed to remove icon for drive: {}: error: {}\n", pDrive, hr );
 					OutputDebugString( strError.c_str() );
 #endif
 					/* Failed to remove icon */
+					// Beep, but only if we're not already beeping about this drive - don't want to annoy the user
 					MessageBeep( MB_OK );
 
 					// Clear the flag to prevent the beep re-occurring
@@ -268,7 +269,7 @@ static void MonitorDiskSpace( LPTSTR pDrive, NOTIFYICONDATA& nid )
 	{
 		/* Can't get the values! */
 		_ASSERT( false );
-		MessageBeep( MB_OK );
+//		MessageBeep( MB_OK );
 	}
 }
 
@@ -279,9 +280,20 @@ static void MonitorDiskSpace( LPTSTR pDrive, NOTIFYICONDATA& nid )
 static void HandleMonitorTimer( HWND hWnd )
 {
 	const auto ReqdBufferSize = GetLogicalDriveStrings( 0, nullptr );
+	if ( ReqdBufferSize == 0 )
+	{
+		/* Can't get the size of the buffer needed for the drive strings! */
+		_ASSERT( false );
+		return;
+	}
 	vector<TCHAR> szDriveStrings( ReqdBufferSize );
-	GetLogicalDriveStrings( ReqdBufferSize, szDriveStrings.data() );
-	const DWORD dwDrives = GetLogicalDrives();
+	if ( GetLogicalDriveStrings( ReqdBufferSize, szDriveStrings.data() ) == 0 )
+	{
+		/* Can't get the drive strings! */
+		_ASSERT( false );
+		return;
+	}
+//	const DWORD dwDrives = GetLogicalDrives();
 
 	/* Initialise the fixed aspects of the notification icon data */
 	NOTIFYICONDATA nid;
@@ -291,30 +303,27 @@ static void HandleMonitorTimer( HWND hWnd )
 	// Use the current icon
 	nid.hIcon = g_DiskDriveIcon;
 
-	WORD dNum;
+//	WORD dNum;
 	/* Loop for all disk drives on the system */
 	LPTSTR pDrive;
 
 	// Loop for valid disk drives
-	for (	dNum = 0, pDrive = szDriveStrings.data();
-			(dNum < std::size(g_DriveConfig)) && (pDrive[0] != _T('\0'));
-			++dNum )
+	for (	pDrive = szDriveStrings.data();
+			pDrive[0] != _T('\0');
+			pDrive = &pDrive[ lstrlen( pDrive ) + 1 ] )
 	{
-		/* Does this drive exist? */
-		if ( dwDrives & (1 << dNum ) )
+		const UINT drivetype = GetDriveType( pDrive );
+
+		if ( DRIVE_FIXED == drivetype )
 		{
-			const UINT drivetype = GetDriveType( pDrive );
+			// Derive the drive number directly from the drive letter - no TOCTOU risk
+			const WORD dNum = static_cast<WORD>( pDrive[0] - _T('A') );
 
-			/* Check local hard disks only */
-			if ( DRIVE_FIXED == drivetype )
-			{
-				nid.uID = dNum;
+			if ( dNum >= std::size( g_DriveConfig ) )
+				break;
 
-				MonitorDiskSpace( pDrive, nid );
-			}
-
-			/* Next drive letter */
-			pDrive = &pDrive[ lstrlen( pDrive ) + 1 ];	//-V108
+			nid.uID = dNum;
+			MonitorDiskSpace( pDrive, nid );
 		}
 	}
 }
@@ -461,7 +470,7 @@ static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) noexcept
 
 	InitEvents();
 
-	bool bNoNag = false;
+//	bool bNoNag = false;
 	/* Process command line switches */
 	for ( size_t indx = 1; indx < static_cast<size_t>(__argc); ++indx )
 	{
@@ -494,7 +503,7 @@ static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) noexcept
 #ifdef _DEBUG
 				MessageBox( GetForegroundWindow(), _T("No Nag"), g_AppName, MB_OK );
 #endif
-				bNoNag = true;
+//				bNoNag = true;
 				break;
 			}
 		}
@@ -529,7 +538,7 @@ static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) noexcept
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
 #else
-	nCmdShow;	// Prevent compiler warning
+	std::ignore = nCmdShow;	// Prevent compiler warning
 #endif
 
 	/* Also start the thread that checks for changes from another instance */
@@ -566,7 +575,10 @@ static void RemoveAllMyNotificationIcons( HWND hWnd )
 static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 // This message number is sent when the taskbar is (re)created. We must assume the icons have been lost
-static UINT g_TaskBarCreated = 0;
+	// Initialized to an invalid value so that the first time through, we don't
+	// do the taskbar created processing, which is important because we haven't
+	// yet created any icons at that point.
+	static UINT g_TaskBarCreated = UINT_MAX;
 
 	/* Has the taskbar been (re)created? */
 	if ( message == g_TaskBarCreated )
@@ -693,6 +705,8 @@ static UINT g_TaskBarCreated = 0;
 
 		/* Wait for it to exit */
 		WaitForSingleObject( g_hNotifyThread, INFINITE );
+		CloseHandle(g_hNotifyThread);
+		g_hNotifyThread = NULL;	// Just to mark it as closed for debugging purposes
 
 		PostQuitMessage(0);
 		break;
@@ -712,16 +726,18 @@ static UINT g_TaskBarCreated = 0;
 		g_hMonitorInstance = NULL;
 
 		/* Start a new instance of the monitoring process */
-		TCHAR szMe[_MAX_PATH];
+		{
+			TCHAR szMe[_MAX_PATH];
 
-		GetModuleFileName( NULL, szMe, std::size( szMe ) );
+			GetModuleFileName(NULL, szMe, std::size(szMe));
 #ifdef _DEBUG
-		MessageBox( hWnd, szMe, _T("About to restart"), MB_OK );
+			MessageBox(hWnd, szMe, _T("About to restart"), MB_OK);
 #endif
-		ShellExecute( hWnd, nullptr, szMe, _T("/M"), nullptr, SW_NORMAL );
+			ShellExecute(hWnd, nullptr, szMe, _T("/M"), nullptr, SW_NORMAL);
 
-		/* Exit this instance */
-		PostMessage( hWnd, WM_COMMAND, MAKEWPARAM( IDM_EXIT, 0 ), 0 );
+			/* Exit this instance */
+			PostMessage(hWnd, WM_COMMAND, MAKEWPARAM(IDM_EXIT, 0), 0);
+		}
 		break;
 
 #if 0
@@ -804,6 +820,7 @@ static UINT g_TaskBarCreated = 0;
 					const int nCmd = TrackPopupMenu( hPop, TPM_RIGHTBUTTON | TPM_RETURNCMD, CurPos.x, CurPos.y, 0, hWnd, nullptr );
 
 					PostMessage( hWnd, WM_NULL, 0, 0);
+					DestroyMenu(hMenu);
 
 					if ( nCmd != 0 )
 					{
@@ -827,15 +844,18 @@ static UINT g_TaskBarCreated = 0;
 
 					/* Get the current free space */
 					ULARGE_INTEGER UserFree, Total, TotFree;
-					static TCHAR szDrive[] = _T("A:\\");
+					TCHAR szDrive[4];
 					szDrive[0] = static_cast<TCHAR>( _T('A') + DriveNum );
+					szDrive[1] = _T(':');
+					szDrive[2] = _T('\\');
+					szDrive[3] = _T('\0');
 					if ( GetDiskFreeSpaceEx( szDrive, &UserFree, &Total, &TotFree ) )
 					{
 						wchar_t szSpaceRemainingW[20];
 						StrFormatByteSizeW( UserFree.QuadPart, szSpaceRemainingW, std::size( szSpaceRemainingW ) );
 
 						/*_T("JD Design Space Patrol: Low disk space on drive %c: %s")*/
-						_stprintf( nid.szTip, g_TipFmtString, _T( 'A' ) + DriveNum, static_cast<LPCTSTR>(szSpaceRemainingW) );	//-V111
+						_sntprintf_s( nid.szTip, _countof(nid.szTip), g_TipFmtString, _T( 'A' ) + DriveNum, static_cast<LPCTSTR>(szSpaceRemainingW) );	//-V111
 
 						nid.uFlags = NIF_TIP;
 						nid.uTimeout = TOOLTIP_DISPLAY_TIME;
@@ -850,13 +870,15 @@ static UINT g_TaskBarCreated = 0;
 			case NIN_BALLOONUSERCLICK:
 				/* User has clicked the balloon tooltip */
 				// Identify which drive this is for
-				CString strMsg;
-				std::ignore = strMsg.LoadString(IDS_NO_LONGER_REMIND);
-				strMsg.Format(strMsg, _T('A') + DriveNum);
-
-				if ( IDYES == MessageBox( hWnd, strMsg, g_AppName, MB_ICONQUESTION | MB_YESNO ) )
 				{
-					g_bNoRefreshTip[DriveNum] = true;
+					CString strMsg;
+					std::ignore = strMsg.LoadString(IDS_NO_LONGER_REMIND);
+					strMsg.Format(strMsg, _T('A') + DriveNum);
+
+					if (IDYES == MessageBox(hWnd, strMsg, g_AppName, MB_ICONQUESTION | MB_YESNO))
+					{
+						g_bNoRefreshTip[DriveNum] = true;
+					}
 				}
 				break;
 
