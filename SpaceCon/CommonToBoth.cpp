@@ -1,11 +1,12 @@
 #include "stdafx.h"
 #include <Windows.h>
 #include <atlbase.h>
+#include <array>
 
 #include "CommonToBoth.h"
 
 /* Global store of the current drive configuration data, 1 per drive letter */
-CDriveCfg g_DriveConfig[26];
+std::array<CDriveCfg, 'Z'-'A'+ 1> g_DriveConfig;
 
 /* The event used to signal settings changes to any other running instances on other users desktops */
 HANDLE g_hEvents[4];	/*	Event[0] is the signal to refresh
@@ -22,9 +23,9 @@ void LoadGlobalSettingsFromReg() noexcept
 	if ( ERROR_SUCCESS == RegRes )
 	{
 		/* Load the global structure */
-		DWORD Size = sizeof( g_DriveConfig );
+		DWORD SizeInBytes = static_cast<DWORD>(g_DriveConfig.size() * sizeof(CDriveCfg));
 
-		if ( ERROR_SUCCESS == rk.QueryBinaryValue( SETTINGS, &g_DriveConfig, &Size ) )
+		if ( ERROR_SUCCESS == rk.QueryBinaryValue( SETTINGS, g_DriveConfig.data(), &SizeInBytes))
 		{
 			/* OK, they're read */
 		}
@@ -159,78 +160,79 @@ static VOID FreeRestrictedSD( PVOID ptr ) noexcept
 
 void InitEvents()
 {
-	{
-		SECURITY_DESCRIPTOR sd;
+	SECURITY_DESCRIPTOR sd;
 
 #ifdef RESTRICTED_ACCESS_SD
-		// build a restricted security descriptor
-		PVOID ptr = BuildRestrictedSD( &sd );
+	// build a restricted security descriptor
+	PVOID ptr = BuildRestrictedSD(&sd);
 #if 0 //Old Win9x code
-		if ( ptr == nullptr )
+	if (ptr == nullptr)
+	{
+		/* We're probably running on Win9x, so this is expected to fail - do the old thing */
+		if (InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION))
 		{
-			/* We're probably running on Win9x, so this is expected to fail - do the old thing */
-			if ( InitializeSecurityDescriptor( &sd, SECURITY_DESCRIPTOR_REVISION ) )
+			// Add a NULL DACL to the security descriptor.
+			if (SetSecurityDescriptorDacl(&sd, TRUE, nullptr, FALSE))
 			{
-				// Add a NULL DACL to the security descriptor.
-				if ( SetSecurityDescriptorDacl( &sd, TRUE, nullptr, FALSE ) )
-				{
-				}
 			}
 		}
-
+	}
 #endif // 0 //Old Win9x code
+	if (ptr != nullptr)
 #endif
+	{
 		SECURITY_ATTRIBUTES sa;
 		// create a mutex using the security descriptor
-		sa.nLength = sizeof( sa );
+		sa.nLength = sizeof(sa);
 		sa.lpSecurityDescriptor = &sd;
 		sa.bInheritHandle = FALSE;
 
 #ifndef RESTRICTED_ACCESS_SD
-		if ( InitializeSecurityDescriptor( &sd, SECURITY_DESCRIPTOR_REVISION ) )
+		if (InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION))
 		{
 			// Add a NULL DACL to the security descriptor.
-			if ( SetSecurityDescriptorDacl( &sd, TRUE, NULL, FALSE ) )
+			if (SetSecurityDescriptorDacl(&sd, TRUE, NULL, FALSE))
 			{
 #endif
 
 				/* This event is used to signal other instances to refresh their settings */
-				g_hEvents[EVT_REFRESH] = CreateEvent( &sa, true, false, _T( "Global\\" ) EVENT_GUID );
+				g_hEvents[EVT_REFRESH] = CreateEvent(&sa, true, false, _T("Global\\") EVENT_GUID);
 
 				/* In non-terminal server environments the above fails since
 				* "Global" events don't exist. So to keep the other code
 				* consistent, create the event locally.
 				*/
-				if ( g_hEvents[EVT_REFRESH] == NULL )
+				if (g_hEvents[EVT_REFRESH] == NULL)
 				{
-					g_hEvents[EVT_REFRESH] = CreateEvent( &sa, true, false, EVENT_GUID );
+					g_hEvents[EVT_REFRESH] = CreateEvent(&sa, true, false, EVENT_GUID);
 				}
-				_ASSERT( g_hEvents[EVT_REFRESH] != NULL );
+				_ASSERT(g_hEvents[EVT_REFRESH] != NULL);
 
 				/* This event signals closedown of this process */
-				g_hEvents[EVT_EXITTHREAD] = CreateEvent( NULL, true, false, NULL );
-				_ASSERT( g_hEvents[EVT_EXITTHREAD] != NULL );
+				g_hEvents[EVT_EXITTHREAD] = CreateEvent(NULL, true, false, NULL);
+				_ASSERT(g_hEvents[EVT_EXITTHREAD] != NULL);
 
-				g_hEvents[EVT_EXITINSTANCE] = CreateEvent( &sa, true, false, _T( "Global\\" ) UNINST_GUID );
-				if ( g_hEvents[EVT_EXITINSTANCE] == NULL )
+				g_hEvents[EVT_EXITINSTANCE] = CreateEvent(&sa, true, false, _T("Global\\") UNINST_GUID);
+				if (g_hEvents[EVT_EXITINSTANCE] == NULL)
 				{
-					g_hEvents[EVT_EXITINSTANCE] = CreateEvent( &sa, true, false, UNINST_GUID );
+					g_hEvents[EVT_EXITINSTANCE] = CreateEvent(&sa, true, false, UNINST_GUID);
 				}
-				_ASSERT( g_hEvents[EVT_EXITINSTANCE] != NULL );
+				_ASSERT(g_hEvents[EVT_EXITINSTANCE] != NULL);
 
-				g_hEvents[EVT_RESTARTMONITORS] = CreateEvent( &sa, true, false, _T( "Global\\" ) RESTART_GUID );
-				if ( g_hEvents[EVT_RESTARTMONITORS] == NULL )
+				g_hEvents[EVT_RESTARTMONITORS] = CreateEvent(&sa, true, false, _T("Global\\") RESTART_GUID);
+				if (g_hEvents[EVT_RESTARTMONITORS] == NULL)
 				{
-					g_hEvents[EVT_RESTARTMONITORS] = CreateEvent( &sa, true, false, RESTART_GUID );
+					g_hEvents[EVT_RESTARTMONITORS] = CreateEvent(&sa, true, false, RESTART_GUID);
 				}
-				_ASSERT( g_hEvents[EVT_RESTARTMONITORS] != NULL );
+				_ASSERT(g_hEvents[EVT_RESTARTMONITORS] != NULL);
 
 #ifdef RESTRICTED_ACCESS_SD
 				// free the memory allocated by BuildRestrictedSD
-				FreeRestrictedSD( ptr );
+				FreeRestrictedSD(ptr);
 #else
 			}
 		}
+	}
 #endif
 	}
 }

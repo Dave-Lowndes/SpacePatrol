@@ -134,7 +134,7 @@ static void InsertDriveDataIntoListControl( HWND hList, int Item, WORD DriveNum,
 /// </summary>
 /// <param name="hList">Handle to the list view control where the drive information is displayed.</param>
 /// <param name="Item">The index of the item in the list view to update.</param>
-static void UpdateDriveInformation( HWND hList, int Item )
+static void UpdateDriveInformation(HWND hList, int Item)
 {
 	LVITEM lvi;
 	lvi.mask = LVIF_PARAM;
@@ -143,98 +143,104 @@ static void UpdateDriveInformation( HWND hList, int Item )
 	// view control doesn't guarantee that the lParam is the same for all subitems,
 	// and some operations can cause it to be lost if you don't specify the subitem)
 	lvi.iSubItem = 0;
-	ListView_GetItem( hList, &lvi );
-
-	CModDlgParams& ItemData = *reinterpret_cast<CModDlgParams *>( lvi.lParam );
-
-	/* Hard to believe, but the stupid ASCII version of
-	 * StrFormatByteSize, only takes a DWORD size!
-	 */
-	ULARGE_INTEGER CallerFreeBytes, TotalBytes, TotalFreeBytes;
-	if ( GetDiskFreeSpaceEx( ItemData.szDrive, &CallerFreeBytes, &TotalBytes, &TotalFreeBytes ) )
+	if (ListView_GetItem(hList, &lvi))
 	{
-		WCHAR szBufferW[20];
-		StrFormatByteSizeW( TotalBytes.QuadPart, szBufferW, std::size( szBufferW ) );
-		lvi.pszText = szBufferW;
-		lvi.iSubItem = COL_SIZE;
-		::SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi) );
+		CModDlgParams& ItemData = *reinterpret_cast<CModDlgParams*>(lvi.lParam);
 
-		StrFormatByteSizeW( TotalFreeBytes.QuadPart, szBufferW, std::size( szBufferW ) );
-		lvi.pszText = szBufferW;
-		lvi.iSubItem = COL_TOT_FREE;
-		::SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi) );
-
-		ItemData.DriveSize = TotalBytes.QuadPart;
-        ItemData.FreeSpace = TotalFreeBytes.QuadPart;
-
-		// Detect the uninitialised state - AlarmAt == 0, and replace with something more reasonable
-		if ( g_DriveConfig[ItemData.DriveNum].AlarmAt == 0 )
+		/* Hard to believe, but the stupid ASCII version of
+		 * StrFormatByteSize, only takes a DWORD size!
+		 */
+		ULARGE_INTEGER CallerFreeBytes, TotalBytes, TotalFreeBytes;
+		if (GetDiskFreeSpaceEx(ItemData.szDrive, &CallerFreeBytes, &TotalBytes, &TotalFreeBytes))
 		{
-			// Use 15% figure initially
-			g_DriveConfig[ItemData.DriveNum].AlarmAt = TotalBytes.QuadPart * 15 / 100;
-		}
+			WCHAR szBufferW[20];
+			StrFormatByteSizeW(TotalBytes.QuadPart, szBufferW, std::size(szBufferW));
+			lvi.pszText = szBufferW;
+			lvi.iSubItem = COL_SIZE;
+			::SendMessage(hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi));
 
-		/* Calculate in some meaningful way, the actual alarm size figure for this drive */
-		StrFormatByteSizeW( g_DriveConfig[ItemData.DriveNum].AlarmAt, szBufferW, std::size( szBufferW ) );
-		lvi.pszText = szBufferW;
-		lvi.iSubItem = COL_NOTIFY;
-		::SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi) );
+			StrFormatByteSizeW(TotalFreeBytes.QuadPart, szBufferW, std::size(szBufferW));
+			lvi.pszText = szBufferW;
+			lvi.iSubItem = COL_TOT_FREE;
+			::SendMessage(hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi));
 
-		ItemData.AlarmThreshold = g_DriveConfig[ItemData.DriveNum].AlarmAt;
+			ItemData.DriveSize = TotalBytes.QuadPart;
+			ItemData.FreeSpace = TotalFreeBytes.QuadPart;
 
-		/* Try to make some recommendation based on the free space & current setting */
-		const auto MsgID = []( ULONGLONG TotalFreeBytes, ULONGLONG AlarmAt, ULONGLONG DriveSize )
-		{
-				if ( TotalFreeBytes < 1ULL * AMEGABYTE )
+			// Detect the uninitialised state - AlarmAt == 0, and replace with something more reasonable
+			if (g_DriveConfig[ItemData.DriveNum].AlarmAt == 0)
+			{
+				// Use 15% figure initially
+				g_DriveConfig[ItemData.DriveNum].AlarmAt = TotalBytes.QuadPart * 15 / 100;
+			}
+
+			/* Calculate in some meaningful way, the actual alarm size figure for this drive */
+			StrFormatByteSizeW(g_DriveConfig[ItemData.DriveNum].AlarmAt, szBufferW, std::size(szBufferW));
+			lvi.pszText = szBufferW;
+			lvi.iSubItem = COL_NOTIFY;
+			::SendMessage(hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi));
+
+			ItemData.AlarmThreshold = g_DriveConfig[ItemData.DriveNum].AlarmAt;
+
+			/* Try to make some recommendation based on the free space & current setting */
+			const auto MsgID = [](ULONGLONG TotalFreeBytes, ULONGLONG AlarmAt, ULONGLONG DriveSize)
 				{
-					/* The total free space on the drive is very limited - advise freeing some space before it's too late */
-					return IDS_RECOMEND_VERY_LOW;
-				}
-				else
-				{
-					/* Have we got less than the user's alarm setting? */
-					if ( AlarmAt >= TotalFreeBytes )
+					if (TotalFreeBytes < 1ULL * AMEGABYTE)
 					{
-						/* Yes, we're at the alarm point */
-						/* Have we got sufficient space to defragment the drive? */
-						return ( TotalFreeBytes < (15 * DriveSize) / 100 ) ?
-									IDS_RECOMMEND_FREE_SPACE :
-									/* We've already exceeded the alarm point - better alter it to prevent repeated alarms */
-									IDS_RECOMEND_BELOW_THRESHOLD;
+						/* The total free space on the drive is very limited - advise freeing some space before it's too late */
+						return IDS_RECOMEND_VERY_LOW;
 					}
 					else
 					{
-						// If we're within 2MB of the alarm point, warn the user
-						return ( (TotalFreeBytes - AlarmAt) < 2ULL * AMEGABYTE ) ?
-									/* We're pretty close to the alarm point - watch out! */
-									IDS_RECOMEND_NEAR_THRESHOLD :
-									0;
+						/* Have we got less than the user's alarm setting? */
+						if (AlarmAt >= TotalFreeBytes)
+						{
+							/* Yes, we're at the alarm point */
+							/* Have we got sufficient space to defragment the drive? */
+							return (TotalFreeBytes < (15 * DriveSize) / 100) ?
+								IDS_RECOMMEND_FREE_SPACE :
+								/* We've already exceeded the alarm point - better alter it to prevent repeated alarms */
+								IDS_RECOMEND_BELOW_THRESHOLD;
+						}
+						else
+						{
+							// If we're within 2MB of the alarm point, warn the user
+							return ((TotalFreeBytes - AlarmAt) < 2ULL * AMEGABYTE) ?
+								/* We're pretty close to the alarm point - watch out! */
+								IDS_RECOMEND_NEAR_THRESHOLD :
+								0;
+						}
 					}
-				}
-		}( TotalFreeBytes.QuadPart, g_DriveConfig[ItemData.DriveNum].AlarmAt, ItemData.DriveSize );
+				}(TotalFreeBytes.QuadPart, g_DriveConfig[ItemData.DriveNum].AlarmAt, ItemData.DriveSize);
 
-		lvi.iSubItem = COL_RECOMENDATION;
+			lvi.iSubItem = COL_RECOMENDATION;
 
-		if ( MsgID != 0 )
-		{
-			CString str;
-			if ( str.LoadString( g_hInstance, MsgID ) )
+			if (MsgID != 0)
 			{
-				lvi.pszText = const_cast<LPTSTR>(static_cast<LPCTSTR>(str));
+				CString str;
+				if (str.LoadString(g_hInstance, MsgID))
+				{
+					lvi.pszText = const_cast<LPTSTR>(static_cast<LPCTSTR>(str));
 
-				SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi) );
+					SendMessage(hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi));
+				}
+				else
+				{
+					// What's gone wrong to lose the string?
+					_ASSERT(false);
+				}
 			}
 			else
 			{
-				// What's gone wrong to lose the string?
-				_ASSERT( false );
+				lvi.pszText = nullptr;
+				SendMessage(hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi));
 			}
 		}
-		else
-		{
-			lvi.pszText = nullptr;
-			SendMessage( hList, LVM_SETITEMTEXT, Item, reinterpret_cast<LPARAM>(&lvi) );
-		}
+	}
+	else
+	{
+		// Failed to get the item data - how did this happen?
+		_ASSERT(false);
 	}
 }
 
@@ -517,7 +523,7 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 							// Derive the drive number directly from the drive letter - no TOCTOU risk
 							const WORD dNum = static_cast<WORD>(pDrive[0] - _T('A'));
 
-							if (dNum >= std::size(g_DriveConfig))
+							if (dNum >= g_DriveConfig.size())
 								break;
 
 							InsertDriveDataIntoListControl( hList, Item, dNum, pDrive );
@@ -627,12 +633,30 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 						// for all subitems, and some operations can cause it to be lost if you
 						// don't specify the subitem)
 						lvi.iSubItem = 0;
-						ListView_GetItem( pnmv->hdr.hwndFrom, &lvi );
-						CModDlgParams * mp = reinterpret_cast<CModDlgParams *>(lvi.lParam);
-						delete mp;
+						if (ListView_GetItem(pnmv->hdr.hwndFrom, &lvi))
+						{
+							// ensure the item gets freed in the same way it was allocated (as a unique_ptr
+							std::unique_ptr<CModDlgParams> itemData(reinterpret_cast<CModDlgParams*>(lvi.lParam));
+						}
+						else
+						{
+							// Failed to get the item data - how did this happen?
+							_ASSERT( false );
+						}
 					}
 
 					/* We've processed this message and don't need the individual delete messages */
+					SetWindowLongPtr( hDlg, DWLP_MSGRESULT, TRUE );
+					return TRUE;
+				}
+
+			case LVM_DELETEITEM:
+				{
+					auto lvi = (LPNMLISTVIEW)lParam;
+
+					// ensure the item gets freed in the same way it was allocated (as a unique_ptr
+					std::unique_ptr<CModDlgParams> itemData(reinterpret_cast<CModDlgParams*>(lvi->lParam));
+					/* We've processed this message and don't need the default processing to do anything */
 					SetWindowLongPtr( hDlg, DWLP_MSGRESULT, TRUE );
 					return TRUE;
 				}
@@ -666,22 +690,24 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 					// view control doesn't guarantee that the lParam is the same for all subitems,
 					// and some operations can cause it to be lost if you don't specify the subitem)
 					lvi.iSubItem = 0;
-					ListView_GetItem( hList, &lvi );
-					CModDlgParams * mp = reinterpret_cast<CModDlgParams *>(lvi.lParam);
-
-                    if ( IDOK == DialogBoxParam( g_hResInst, MAKEINTRESOURCE( IDD_MOD_DLG ), hDlg, ModifyDlg, reinterpret_cast<LPARAM>( mp ) ) )
+					if (ListView_GetItem(hList, &lvi))
 					{
-						/* Modified value returned - copy alarm value to global settings */
-						g_DriveConfig[mp->DriveNum].AlarmAt = mp->AlarmThreshold;
+						CModDlgParams* mp = reinterpret_cast<CModDlgParams*>(lvi.lParam);
 
-						/* Update list display */
-						UpdateDriveInformation( hList, SelItem );
+						if (IDOK == DialogBoxParam(g_hResInst, MAKEINTRESOURCE(IDD_MOD_DLG), hDlg, ModifyDlg, reinterpret_cast<LPARAM>(mp)))
+						{
+							/* Modified value returned - copy alarm value to global settings */
+							g_DriveConfig[mp->DriveNum].AlarmAt = mp->AlarmThreshold;
 
-						/* Set the modified flag */
-						g_bModified = true;
+							/* Update list display */
+							UpdateDriveInformation(hList, SelItem);
 
-						/* Enable the apply button */
-						EnableWindow( GetDlgItem( hDlg, IDC_SAVE ), true );
+							/* Set the modified flag */
+							g_bModified = true;
+
+							/* Enable the apply button */
+							EnableWindow(GetDlgItem(hDlg, IDC_SAVE), true);
+						}
 					}
 				}
 			}
@@ -713,7 +739,9 @@ static INT_PTR CALLBACK ConfigDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 					if ( ERROR_SUCCESS == RegRes )
 					{
 						/* Store the global structure */
-						RegRes = RegSetValueEx( hKey, SETTINGS, 0, REG_BINARY, reinterpret_cast<LPCBYTE>( &g_DriveConfig ), sizeof( g_DriveConfig ) );
+						RegRes = RegSetValueEx( hKey, SETTINGS, 0, REG_BINARY,
+									reinterpret_cast<LPCBYTE>( g_DriveConfig.data() ),
+									static_cast<DWORD>(g_DriveConfig.size() * sizeof(CDriveCfg)) );
 
 						if ( ERROR_SUCCESS == RegRes )
 						{

@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 
 #pragma pack( push )
 #pragma pack( 1 )
@@ -13,7 +14,7 @@ public:
 #pragma pack( pop )
 
 // One for each possible drive letter
-extern CDriveCfg g_DriveConfig['Z'-'A'+1];
+extern std::array<CDriveCfg, 'Z'-'A'+ 1> g_DriveConfig;
 
 // The IDs of the events in g_hEvents
 enum EVTS { EVT_REFRESH , EVT_EXITTHREAD, EVT_EXITINSTANCE, EVT_RESTARTMONITORS };

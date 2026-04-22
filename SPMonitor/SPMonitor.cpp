@@ -96,9 +96,9 @@ static void HandleDiskSpaceBelowThreshold( ULONGLONG UserFree, NOTIFYICONDATA& n
 		/* The time when a drive icon was last updated,
 		* so that I can re-display the balloon tooltip.
 		*/
-		DWORD LastDisplayedTime;
+		ULONGLONG LastDisplayedTime;
 		/* The current period that the balloon tooltip redisplays */
-		DWORD RedisplayPeriod;
+		ULONGLONG RedisplayPeriod;
 	};
 
 	static DRIVE_NI_TIME DriveNI[26];
@@ -125,10 +125,8 @@ static void HandleDiskSpaceBelowThreshold( ULONGLONG UserFree, NOTIFYICONDATA& n
 							NIIF_INFO :
 							/* Insufficient to defrag - so slightly higher warning */
 							NIIF_WARNING;
-#pragma warning( push )
-#pragma warning( disable:28159 )
-	const auto tcNow = GetTickCount();
-#pragma warning( pop )
+							
+	const auto tcNow = GetTickCount64();
 
 	/* Are we already displaying this drive's icon? */
 	if ( !g_DriveIconDisplayed[dNum] )
@@ -306,7 +304,7 @@ static void HandleMonitorTimer( HWND hWnd )
 			// Derive the drive number directly from the drive letter - no TOCTOU risk
 			const WORD dNum = static_cast<WORD>( pDrive[0] - _T('A') );
 
-			if ( dNum >= std::size( g_DriveConfig ) )
+			if ( dNum >= g_DriveConfig.size() )
 				break;
 
 			nid.uID = dNum;
@@ -498,7 +496,7 @@ static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) noexcept
 
 	/* Is there already another monitoring instance (on this desktop) running? */
 	{
-		g_hMonitorInstance = CreateEvent( NULL, true, false, _T("{FB3C04D9-4A91-4728-AA0D-F157A2AF632F}") );
+		g_hMonitorInstance = CreateMutex( NULL, true, _T("{FB3C04D9-4A91-4728-AA0D-F157A2AF632F}") );
 		const bool bMonitorInstanceAlreadyRunning = (  g_hMonitorInstance != NULL ) && ( GetLastError() == ERROR_ALREADY_EXISTS );
 		if ( bMonitorInstanceAlreadyRunning )
 		{
@@ -695,6 +693,9 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 		CloseHandle(g_hNotifyThread);
 		g_hNotifyThread = NULL;	// Just to mark it as closed for debugging purposes
 
+		CloseHandle(g_hMonitorInstance);
+		g_hMonitorInstance = NULL;
+
 		PostQuitMessage(0);
 		break;
 
@@ -709,7 +710,8 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 	case UWM_RESTART_ME:
 		/* Clear the signal that indicates this desktop's monitoring process is running */
-		CloseHandle( g_hMonitorInstance );
+		ReleaseMutex( g_hMonitorInstance );
+		CloseHandle(g_hMonitorInstance);
 		g_hMonitorInstance = NULL;
 
 		/* Start a new instance of the monitoring process */
@@ -760,6 +762,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 	case UWM_TIPNOTIFY:
 		{
 			const int DriveNum = static_cast<int>( wParam );	// wParam is the icon ID (which is the drive number)
+			_ASSERT( ( DriveNum >= 0 ) && ( DriveNum < static_cast<int>(g_DriveConfig.size()) ) );
 
 			switch (lParam)
 			{
@@ -858,9 +861,9 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 				/* User has clicked the balloon tooltip */
 				// Identify which drive this is for
 				{
+					CString strFmt( MAKEINTRESOURCE(IDS_NO_LONGER_REMIND) );
 					CString strMsg;
-					std::ignore = strMsg.LoadString(IDS_NO_LONGER_REMIND);
-					strMsg.Format(strMsg, _T('A') + DriveNum);
+					strMsg.Format(strFmt, _T('A') + DriveNum);
 
 					if (IDYES == MessageBox(hWnd, strMsg, g_AppName, MB_ICONQUESTION | MB_YESNO))
 					{
